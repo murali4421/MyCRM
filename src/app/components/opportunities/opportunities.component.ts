@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { OpportunityStage, Opportunity } from '../../models/crm.models';
@@ -15,7 +15,7 @@ import { AuthService } from '../../services/auth.service';
           <h1 class="text-3xl font-bold text-gray-100">Opportunities</h1>
           <div class="flex items-center gap-2">
             <button (click)="uiService.openImportModal('opportunities')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
-            <button (click)="uiService.openOpportunityModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">New Opportunity</button>
+            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Add Opportunity</button>
           </div>
       </div>
 
@@ -33,6 +33,24 @@ import { AuthService } from '../../services/auth.service';
                     (drop)="onDrop($event, stage)"
                     [class.bg-gray-700/50]="dragOverStage() === stage"
                   >
+                      @if (stage === opportunityStages[0] && isAdding()) {
+                        <div class="bg-gray-800 rounded-md shadow-sm p-3 border border-indigo-500">
+                           <form #newOppForm="ngForm" (ngSubmit)="saveNewOpportunity(newOppForm)" class="space-y-2">
+                              <input type="text" name="name" ngModel required placeholder="Opportunity Name" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1.5 text-sm">
+                              <select name="companyId" ngModel required class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1.5 text-sm">
+                                <option [ngValue]="undefined" disabled>Select Company</option>
+                                @for (company of dataService.companies(); track company.id) {
+                                  <option [value]="company.id">{{ company.name }}</option>
+                                }
+                              </select>
+                              <input type="number" name="value" ngModel required placeholder="Value" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1.5 text-sm">
+                              <div class="mt-2 flex justify-end gap-2">
+                                <button type="button" (click)="cancelAdd()" class="text-sm font-medium text-gray-300 hover:text-white px-3 py-1 rounded-md">Cancel</button>
+                                <button type="submit" [disabled]="!newOppForm.valid" class="text-sm font-medium bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 disabled:bg-gray-600">Save</button>
+                              </div>
+                            </form>
+                        </div>
+                      }
                       @for(opp of opportunitiesByStage()[stage]; track opp.id) {
                           <div 
                             class="bg-gray-800 rounded-md shadow-sm p-3 border border-gray-700 cursor-pointer hover:shadow-md hover:border-indigo-500" 
@@ -49,6 +67,7 @@ import { AuthService } from '../../services/auth.service';
                           </div>
                       }
                       @empty {
+                        @if (!isAdding() || stage !== opportunityStages[0]) {
                           <div class="p-4 text-center text-sm text-gray-500 h-full flex items-center justify-center">
                             @if (dragOverStage() === stage) {
                                 <span>Drop here</span>
@@ -56,6 +75,7 @@ import { AuthService } from '../../services/auth.service';
                                 <span>No opportunities</span>
                             }
                           </div>
+                        }
                       }
                   </div>
               </div>
@@ -74,6 +94,7 @@ export class OpportunitiesComponent {
   draggedOpportunityId = signal<string | null>(null);
   dragOverStage = signal<OpportunityStage | null>(null);
   opportunityStages = Object.values(OpportunityStage);
+  isAdding = signal(false);
 
   private getVisibleUserIds = computed(() => {
     const currentUser = this.authService.currentUser();
@@ -138,5 +159,31 @@ export class OpportunitiesComponent {
     }
     this.draggedOpportunityId.set(null);
     this.dragOverStage.set(null);
+  }
+
+  startAdding() {
+    this.isAdding.set(true);
+  }
+
+  cancelAdd() {
+    this.isAdding.set(false);
+  }
+
+  async saveNewOpportunity(form: NgForm) {
+    if (form.invalid) return;
+
+    const newOpp: Opportunity = {
+      id: `opp-${Date.now()}`,
+      name: form.value.name,
+      companyId: form.value.companyId,
+      stage: OpportunityStage.Prospecting,
+      value: form.value.value,
+      closeDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0], // Default to 1 month from now
+      ownerId: this.authService.currentUser()!.id,
+      createdAt: new Date().toISOString(),
+    };
+
+    await this.dataService.addOpportunity(newOpp);
+    this.isAdding.set(false);
   }
 }

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { AuthService } from '../../services/auth.service';
+import { Task } from '../../models/crm.models';
 
 @Component({
   selector: 'app-tasks',
@@ -20,15 +21,44 @@ import { AuthService } from '../../services/auth.service';
               (ngModelChange)="searchTerm.set($event)"
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('tasks')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
-            <button (click)="uiService.openTaskModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">New Task</button>
+            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Add Task</button>
           </div>
       </div>
+
+      @if (isAdding()) {
+        <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-4 mb-4">
+          <form #newTaskForm="ngForm" (ngSubmit)="saveNewTask(newTaskForm)">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-300">Title</label>
+                <input type="text" name="title" ngModel required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Due Date</label>
+                <input type="date" name="dueDate" [ngModel]="newTask.dueDate" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Owner</label>
+                <select name="ownerId" [ngModel]="newTask.ownerId" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                  @for(user of dataService.users(); track user.id) {
+                    <option [value]="user.id">{{user.name}}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
+              <button type="button" (click)="cancelAdd()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
+              <button type="submit" [disabled]="!newTaskForm.valid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Task</button>
+            </div>
+          </form>
+        </div>
+      }
 
       <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700">
         <ul class="divide-y divide-gray-700">
           @for (task of paginatedTasks(); track task.id) {
-            <li class="p-4 flex items-center space-x-4">
-              <input type="checkbox" [checked]="task.completed" (change)="dataService.toggleTaskCompleted(task.id)" class="h-5 w-5 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500 cursor-pointer">
+            <li class="p-4 flex items-center space-x-4 hover:bg-gray-700 cursor-pointer" (click)="uiService.openTaskModal(task)">
+              <input type="checkbox" [checked]="task.completed" (change)="dataService.toggleTaskCompleted(task.id)" (click)="$event.stopPropagation()" class="h-5 w-5 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500 cursor-pointer">
               <div class="flex-1">
                   <p class="font-medium text-gray-100" [class.line-through]="task.completed">{{ task.title }}</p>
                   <div class="flex items-center space-x-4 text-sm text-gray-400 mt-1">
@@ -42,12 +72,13 @@ import { AuthService } from '../../services/auth.service';
                       }
                   </div>
               </div>
-              <button (click)="uiService.openTaskModal(task)" class="text-indigo-400 hover:text-indigo-300 font-medium text-sm">Edit</button>
-              <button (click)="deleteTask(task.id)" class="text-red-500 hover:text-red-400 font-medium text-sm">Delete</button>
+              <button (click)="$event.stopPropagation(); deleteTask(task.id)" class="text-red-500 hover:text-red-400 font-medium text-sm">Delete</button>
             </li>
           }
           @empty {
-             <li class="text-center py-8 text-gray-400">No tasks found.</li>
+            @if (!isAdding()) {
+              <li class="text-center py-8 text-gray-400">No tasks found.</li>
+            }
           }
         </ul>
       </div>
@@ -99,6 +130,8 @@ export class TasksComponent {
   authService = inject(AuthService);
 
   searchTerm = signal('');
+  isAdding = signal(false);
+  newTask: Partial<Task> = {};
 
   constructor() {
     effect(() => {
@@ -189,5 +222,30 @@ export class TasksComponent {
   getParentTaskTitle(taskId: string | null | undefined): string | undefined {
     if (!taskId) return undefined;
     return this.dataService.tasks().find(t => t.id === taskId)?.title;
+  }
+
+  startAdding() {
+    this.newTask = {
+      ownerId: this.authService.currentUser()?.id,
+      dueDate: new Date().toISOString().split('T')[0],
+      completed: false
+    };
+    this.isAdding.set(true);
+  }
+
+  cancelAdd() {
+    this.isAdding.set(false);
+  }
+
+  async saveNewTask(form: NgForm) {
+    if (form.invalid) return;
+    const taskToAdd: Task = {
+      ...form.value,
+      id: `task-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      completed: false
+    };
+    await this.dataService.addTask(taskToAdd);
+    this.isAdding.set(false);
   }
 }

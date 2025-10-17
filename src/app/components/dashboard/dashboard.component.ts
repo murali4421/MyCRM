@@ -404,7 +404,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const closeDate = new Date(opp.closeDate.replace(/-/g, '/'));
         const key = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
         if (key in dataByMonth) {
-            // FIX: The left-hand side of an arithmetic operation must be a number. `dataByMonth[key]` could be `undefined` here according to TypeScript, so provide a fallback of 0.
+            // FIX: The left-hand side of an arithmetic operation must be a number.
+            // `dataByMonth[key]` could be treated as `number | undefined`, so `|| 0` ensures it's a number.
             dataByMonth[key] = (dataByMonth[key] || 0) + opp.value;
         }
     });
@@ -442,21 +443,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
     const allUsers = this.dataService.users();
   
-    // FIX: The spread operator `...` can only be used on object types. `allUsers.find(...)` can return `undefined`, which is not an object. The fix is to check if a user was found, and if so, construct the new object by explicitly mapping properties instead of spreading the potentially undefined user object.
+    // FIX: Avoid spreading a potentially undefined result from `.find()`, which would cause a runtime error.
+    // Instead, find the user first, and if they exist, construct the leaderboard entry.
+    // Then, filter out any null results for users that might not have been found.
     return Object.entries(valueByOwner)
         .map(([ownerId, data]) => {
             const user = allUsers.find(u => u.id === ownerId);
-            if (!user) {
-              return null;
+            if (user) {
+              return {
+                  ...data,
+                  ownerId,
+                  name: user.name,
+                  profilePictureUrl: user.profilePictureUrl
+              };
             }
-            return {
-                ...data,
-                ownerId,
-                name: user.name,
-                profilePictureUrl: user.profilePictureUrl
-            };
+            return null;
         })
-        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .filter((item): item is NonNullable<typeof item> => item !== null) // Type guard to remove nulls
         .sort((a, b) => b.totalValue - a.totalValue)
         .slice(0, 5); // Top 5
   });

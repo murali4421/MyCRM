@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { Activity } from '../../models/crm.models';
@@ -48,9 +48,46 @@ import { AuthService } from '../../services/auth.service';
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
-            <button (click)="uiService.openActivityEditModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Log Activity</button>
+            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Log Activity</button>
           </div>
       </div>
+      
+      @if (isAdding()) {
+        <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-4 mb-4">
+          <h3 class="text-lg font-semibold text-gray-100 mb-4">Log New Activity</h3>
+          <form #newActivityForm="ngForm" (ngSubmit)="saveNewActivity(newActivityForm)">
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                  <label class="block text-sm font-medium text-gray-300">Type</label>
+                  <select name="type" [(ngModel)]="newActivity.type" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                    <option>Call summary</option>
+                    <option>Email</option>
+                    <option>Meeting</option>
+                    <option>Note</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300">Date & Time</label>
+                  <input type="datetime-local" name="startTime" [(ngModel)]="newActivity.startTime" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Subject</label>
+                <input type="text" name="subject" ngModel required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Description / Notes</label>
+                <textarea name="description" ngModel rows="3" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
+              <button type="button" (click)="cancelAdd()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
+              <button type="submit" [disabled]="!newActivityForm.valid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Activity</button>
+            </div>
+          </form>
+        </div>
+      }
       
       @if (viewMode() === 'feed') {
         <!-- Activity Feed View -->
@@ -63,7 +100,7 @@ import { AuthService } from '../../services/auth.service';
                     @if(!isLast) {
                       <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-700" aria-hidden="true"></span>
                     }
-                    <div class="relative flex space-x-3">
+                    <div class="relative flex space-x-3 cursor-pointer" (click)="editActivity(activity)">
                       <div>
                         <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-gray-800"
                               [class]="getIconBgColor(activity.type)">
@@ -91,8 +128,7 @@ import { AuthService } from '../../services/auth.service';
                         <div class="text-right text-sm whitespace-nowrap text-gray-400">
                           <time [dateTime]="activity.startTime">{{ activity.startTime | date:'short' }}</time>
                           <div class="mt-2 flex space-x-2 justify-end">
-                            <button (click)="editActivity(activity)" class="text-indigo-400 hover:text-indigo-300 font-medium text-xs">Edit</button>
-                            <button (click)="deleteActivity(activity.id)" class="text-red-500 hover:text-red-400 font-medium text-xs">Delete</button>
+                            <button (click)="$event.stopPropagation(); deleteActivity(activity.id)" class="text-red-500 hover:text-red-400 font-medium text-xs">Delete</button>
                           </div>
                         </div>
                       </div>
@@ -122,15 +158,14 @@ import { AuthService } from '../../services/auth.service';
             </thead>
               <tbody class="bg-gray-800 divide-y divide-gray-700">
                 @for (activity of paginatedActivities(); track activity.id) {
-                  <tr class="hover:bg-gray-700">
+                  <tr class="hover:bg-gray-700 cursor-pointer" (click)="editActivity(activity)">
                     <td class="px-4 py-3 text-sm text-gray-300"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getBadgeClasses(activity.type)">{{ activity.type }}</span></td>
                     <td class="px-4 py-3 text-sm font-medium text-gray-100">{{ activity.subject }}</td>
                     <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getUserById(activity.ownerId)?.name }}</td>
                     <td class="px-4 py-3 text-sm text-gray-300">{{ activity.relatedEntity ? dataService.getRelatedEntityName(activity.relatedEntity) : 'N/A' }}</td>
                     <td class="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">{{ activity.startTime | date:'medium' }}</td>
-                    <td class="px-4 py-3 text-sm text-right space-x-2">
-                      <button (click)="editActivity(activity)" class="text-indigo-400 hover:text-indigo-300 font-medium">Edit</button>
-                      <button (click)="deleteActivity(activity.id)" class="text-red-500 hover:text-red-400 font-medium">Delete</button>
+                    <td class="px-4 py-3 text-sm text-right">
+                      <button (click)="$event.stopPropagation(); deleteActivity(activity.id)" class="text-red-500 hover:text-red-400 font-medium">Delete</button>
                     </td>
                   </tr>
                 }
@@ -196,6 +231,8 @@ export class ActivitiesComponent {
   searchTerm = signal('');
   typeFilter = signal<string>('all');
   ownerFilter = signal<string>('all');
+  isAdding = signal(false);
+  newActivity: Partial<Activity> = {};
 
   constructor() {
     effect(() => {
@@ -287,6 +324,35 @@ export class ActivitiesComponent {
     }
   }
   
+  startAdding() {
+    this.newActivity = {
+      ownerId: this.authService.currentUser()?.id,
+      startTime: new Date().toISOString().slice(0, 16),
+      status: 'Done',
+      type: 'Call summary'
+    };
+    this.isAdding.set(true);
+  }
+
+  cancelAdd() {
+    this.isAdding.set(false);
+  }
+
+  async saveNewActivity(form: NgForm) {
+    if (form.invalid) return;
+
+    const activityToAdd: Activity = {
+      ...form.value,
+      id: `act-${Date.now()}`,
+      startTime: new Date(form.value.startTime).toISOString(),
+      endTime: new Date(form.value.startTime).toISOString(),
+      status: 'Done',
+      ownerId: this.authService.currentUser()!.id,
+    };
+    await this.dataService.addActivity(activityToAdd);
+    this.isAdding.set(false);
+  }
+
   // UI Helper methods
   getIconBgColor(type: Activity['type']): string {
     const colors: { [key: string]: string } = { 'Call summary': 'bg-amber-500', 'Email': 'bg-sky-500', 'Meeting': 'bg-violet-500', 'Note': 'bg-slate-500' };

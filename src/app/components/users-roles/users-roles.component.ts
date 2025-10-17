@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
@@ -47,7 +47,7 @@ import { Contact, User } from '../../models/crm.models';
           @case('users') {
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold text-gray-100">All Users</h3>
-                <button (click)="uiService.openUserModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Invite User</button>
+                <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50">Invite User</button>
             </div>
               <div class="bg-gray-800 shadow-sm rounded-lg overflow-x-auto border border-gray-700">
               <table class="min-w-full leading-normal">
@@ -61,6 +61,29 @@ import { Contact, User } from '../../models/crm.models';
                   </tr>
                 </thead>
                 <tbody>
+                  @if (isAdding()) {
+                    <tr class="bg-gray-700/50">
+                      <td class="px-5 py-2 border-b border-gray-700"><input type="text" [(ngModel)]="newUser.name" placeholder="Full Name" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
+                      <td class="px-5 py-2 border-b border-gray-700"><input type="email" [(ngModel)]="newUser.email" placeholder="Email Address" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
+                      <td class="px-5 py-2 border-b border-gray-700">
+                        <select [(ngModel)]="newUser.roleId" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm">
+                          @for (role of dataService.roles(); track role.id) {
+                            <option [value]="role.id">{{ role.name }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td class="px-5 py-2 border-b border-gray-700 text-sm">
+                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-amber-300">
+                          <span aria-hidden class="absolute inset-0 rounded-full opacity-20 bg-amber-500"></span>
+                          <span class="relative">Invited</span>
+                        </span>
+                      </td>
+                      <td class="px-5 py-2 border-b border-gray-700 text-right whitespace-nowrap">
+                        <button (click)="saveNewUser()" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 mr-2">Save</button>
+                        <button (click)="cancelAdd()" class="text-sm font-medium text-gray-400 hover:text-gray-200">Cancel</button>
+                      </td>
+                    </tr>
+                  }
                   @for(user of paginatedUsers(); track user.id) {
                     <tr>
                       <td class="px-5 py-4 border-b border-gray-700 bg-gray-800 text-sm font-medium text-gray-50">{{user.name}}</td>
@@ -225,6 +248,9 @@ export class UsersRolesComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   authService = inject(AuthService);
+
+  isAdding = signal(false);
+  newUser: Partial<User> = {};
   
   private currentUserRoleName = computed(() => {
     const user = this.authService.currentUser();
@@ -274,6 +300,32 @@ export class UsersRolesComponent {
         return 'Unknown Role';
     }
     return role.name;
+  }
+
+  startAdding() {
+    this.newUser = { name: '', email: '', roleId: 'role-3' }; // Default role Sales Rep
+    this.isAdding.set(true);
+  }
+
+  cancelAdd() {
+    this.isAdding.set(false);
+  }
+
+  async saveNewUser() {
+    if (!this.newUser.name?.trim() || !this.newUser.email?.trim() || !this.newUser.roleId) {
+      alert('All fields are required.');
+      return;
+    }
+    const userToAdd: User = {
+      id: `user-${Date.now()}`,
+      status: 'Invited',
+      profilePictureUrl: `https://i.pravatar.cc/150?u=${Date.now()}`,
+      name: this.newUser.name,
+      email: this.newUser.email,
+      roleId: this.newUser.roleId,
+    };
+    await this.dataService.addUser(userToAdd);
+    this.isAdding.set(false);
   }
 
   // --- Common Pagination ---

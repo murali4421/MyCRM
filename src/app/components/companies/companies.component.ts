@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
+import { Company } from '../../models/crm.models';
 
 @Component({
   selector: 'app-companies',
@@ -20,7 +21,7 @@ import { UiService } from '../../services/ui.service';
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
-            <button (click)="uiService.openCompanyDetails(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">New Company</button>
+            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Add Company</button>
           </div>
       </div>
       <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
@@ -34,11 +35,31 @@ import { UiService } from '../../services/ui.service';
             </tr>
           </thead>
             <tbody class="bg-gray-800 divide-y divide-gray-700">
+              @if (isAdding()) {
+                <tr class="bg-gray-700/50">
+                  @if (isColumnVisible('name')) {
+                    <td class="px-4 py-2"><input type="text" [(ngModel)]="newCompany.name" placeholder="Company Name" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
+                  }
+                  @if (isColumnVisible('industry')) {
+                    <td class="px-4 py-2"><input type="text" [(ngModel)]="newCompany.industry" placeholder="Industry" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
+                  }
+                  @if (isColumnVisible('website')) {
+                    <td class="px-4 py-2"><input type="text" [(ngModel)]="newCompany.website" placeholder="Website" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
+                  }
+                  @if (isColumnVisible('createdAt')) {
+                    <td class="px-4 py-2"></td>
+                  }
+                  <td class="px-4 py-2 text-right whitespace-nowrap">
+                    <button (click)="saveNewCompany()" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 mr-2">Save</button>
+                    <button (click)="cancelAdd()" class="text-sm font-medium text-gray-400 hover:text-gray-200">Cancel</button>
+                  </td>
+                </tr>
+              }
               @for (company of paginatedCompanies(); track company.id) {
-                <tr class="hover:bg-gray-700">
+                <tr class="hover:bg-gray-700 cursor-pointer" (click)="uiService.openCompanyDetails(company)">
                   @if (isColumnVisible('name')) {
                     <td class="px-4 py-3 text-sm font-medium text-gray-100">
-                      <a href="#" (click)="$event.preventDefault(); showContactPopover($event, company.id)" class="hover:text-indigo-400 hover:underline">
+                      <a href="#" (click)="$event.preventDefault(); $event.stopPropagation(); showContactPopover($event, company.id)" class="hover:text-indigo-400 hover:underline">
                         {{company.name}}
                       </a>
                     </td>
@@ -48,21 +69,21 @@ import { UiService } from '../../services/ui.service';
                   }
                   @if (isColumnVisible('website')) {
                     <td class="px-4 py-3 text-sm text-gray-300">
-                      <a [href]="company.website" target="_blank" class="text-indigo-400 hover:underline">{{company.website}}</a>
+                      <a [href]="company.website" (click)="$event.stopPropagation()" target="_blank" class="text-indigo-400 hover:underline">{{company.website}}</a>
                     </td>
                   }
                   @if (isColumnVisible('createdAt')) {
                     <td class="px-4 py-3 text-sm text-gray-300">{{company.createdAt | date:'mediumDate'}}</td>
                   }
-                  <td class="px-4 py-3 text-sm text-right">
-                    <button (click)="uiService.openCompanyDetails(company)" class="text-indigo-400 hover:text-indigo-300 font-medium">View</button>
-                  </td>
+                   <td class="px-4 py-3"></td>
                 </tr>
               }
               @empty {
-                <tr>
-                  <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No companies found.</td>
-                </tr>
+                @if (!isAdding()) {
+                  <tr>
+                    <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No companies found.</td>
+                  </tr>
+                }
               }
             </tbody>
         </table>
@@ -114,6 +135,8 @@ export class CompaniesComponent {
   uiService = inject(UiService);
 
   searchTerm = signal('');
+  isAdding = signal(false);
+  newCompany: Partial<Company> = {};
 
   constructor() {
     effect(() => {
@@ -182,5 +205,30 @@ export class CompaniesComponent {
         y: rect.bottom + 8
       }
     });
+  }
+
+  startAdding() {
+    this.newCompany = { name: '', industry: '', website: '' };
+    this.isAdding.set(true);
+  }
+
+  cancelAdd() {
+    this.isAdding.set(false);
+  }
+
+  async saveNewCompany() {
+    if (!this.newCompany.name?.trim()) {
+      alert('Company name is required.');
+      return;
+    }
+    const companyToAdd: Company = {
+      id: `comp-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      name: this.newCompany.name,
+      industry: this.newCompany.industry || '',
+      website: this.newCompany.website || '',
+    };
+    await this.dataService.addCompany(companyToAdd);
+    this.isAdding.set(false);
   }
 }
