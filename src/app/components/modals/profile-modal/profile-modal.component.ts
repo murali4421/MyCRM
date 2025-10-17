@@ -16,17 +16,17 @@ import { UiService } from '../../../services/ui.service';
           <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </header>
-      <div class="flex flex-1 overflow-hidden">
+      <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <aside class="w-1/4 border-r border-gray-700 p-4">
-          <nav class="flex flex-col space-y-1">
-            <button (click)="uiService.profileView.set('personal-info')" [class]="uiService.profileView() === 'personal-info' ? 'bg-gray-700 text-gray-50' : 'text-gray-300 hover:bg-gray-700'" class="px-3 py-2 text-sm font-medium rounded-md text-left">Personal info</button>
-            <button (click)="uiService.profileView.set('password')" [class]="uiService.profileView() === 'password' ? 'bg-gray-700 text-gray-50' : 'text-gray-300 hover:bg-gray-700'" class="px-3 py-2 text-sm font-medium rounded-md text-left">Password</button>
-            <button (click)="uiService.profileView.set('notifications')" [class]="uiService.profileView() === 'notifications' ? 'bg-gray-700 text-gray-50' : 'text-gray-300 hover:bg-gray-700'" class="px-3 py-2 text-sm font-medium rounded-md text-left">Notifications</button>
+        <aside class="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-700 p-2 md:p-4">
+          <nav class="flex flex-row md:flex-col md:space-y-1 -mx-2 md:mx-0 px-2 md:px-0 overflow-x-auto">
+            <button (click)="uiService.profileView.set('personal-info')" [class]="uiService.profileView() === 'personal-info' ? 'bg-gray-700 text-gray-50' : 'text-gray-300 hover:bg-gray-700'" class="px-3 py-2 text-sm font-medium rounded-md text-left whitespace-nowrap md:whitespace-normal">Personal info</button>
+            <button (click)="uiService.profileView.set('password')" [class]="uiService.profileView() === 'password' ? 'bg-gray-700 text-gray-50' : 'text-gray-300 hover:bg-gray-700'" class="px-3 py-2 text-sm font-medium rounded-md text-left whitespace-nowrap md:whitespace-normal">Password</button>
+            <button (click)="uiService.profileView.set('notifications')" [class]="uiService.profileView() === 'notifications' ? 'bg-gray-700 text-gray-50' : 'text-gray-300 hover:bg-gray-700'" class="px-3 py-2 text-sm font-medium rounded-md text-left whitespace-nowrap md:whitespace-normal">Notifications</button>
           </nav>
         </aside>
         <!-- Content -->
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main class="flex-1 p-4 md:p-6 overflow-y-auto">
           @switch(uiService.profileView()) {
             @case('personal-info') {
               <div>

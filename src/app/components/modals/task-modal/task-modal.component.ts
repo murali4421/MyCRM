@@ -132,7 +132,7 @@ export class TaskModalComponent {
     }
   }
 
-  saveTask(form: NgForm) {
+  async saveTask(form: NgForm) {
     if (form.invalid) return;
 
     const { relatedEntityType, relatedEntityId, ...taskData } = form.value;
@@ -154,9 +154,9 @@ export class TaskModalComponent {
         id: `task-${Date.now()}`,
         createdAt: new Date().toISOString(),
       } as Task;
-      this.dataService.addTask(newTask);
+      await this.dataService.addTask(newTask);
     } else {
-      this.dataService.updateTask(finalTaskData as Task);
+      await this.dataService.updateTask(finalTaskData as Task);
     }
     this.uiService.closeTaskModal();
   }

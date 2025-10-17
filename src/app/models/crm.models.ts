@@ -21,6 +21,7 @@ export interface Contact {
   ownerId: string;
   roleInCompany?: string;
   createdAt: string;
+  leadScore?: 'Hot' | 'Warm' | 'Cold';
 }
 
 export enum OpportunityStage {

@@ -114,7 +114,7 @@ export class EmailComposerModalComponent {
     }
   }
 
-  sendEmail(form: NgForm) {
+  async sendEmail(form: NgForm) {
     if (form.invalid) return;
 
     // In a real app, this would send an email. Here, we just log it as an activity.
@@ -130,7 +130,7 @@ export class EmailComposerModalComponent {
       relatedEntity: this.composerData().relatedEntity || undefined,
     };
 
-    this.dataService.addActivity(newActivity);
+    await this.dataService.addActivity(newActivity);
     alert('Email sent (and logged as activity).');
     this.uiService.closeEmailComposer();
   }

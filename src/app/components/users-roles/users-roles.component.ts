@@ -90,7 +90,7 @@ import { Contact, User } from '../../models/crm.models';
                <!-- Users Pagination Controls -->
               @if (usersTotalPages() > 0 && allUsers().length > 0) {
                 <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
-                  <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
                     <div>
                       <p class="text-sm text-gray-300">
                         Showing
@@ -113,7 +113,8 @@ import { Contact, User } from '../../models/crm.models';
                           <span class="sr-only">Previous</span>
                           <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                         </button>
-                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ usersCurrentPage() }} of {{ usersTotalPages() }} </span>
+                        <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ usersCurrentPage() }} of {{ usersTotalPages() }} </span>
+                        <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ usersCurrentPage() }} / {{ usersTotalPages() }} </span>
                         <button (click)="changeUsersPage(usersCurrentPage() + 1)" [disabled]="usersCurrentPage() >= usersTotalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
                           <span class="sr-only">Next</span>
                           <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
@@ -177,7 +178,7 @@ import { Contact, User } from '../../models/crm.models';
                  <!-- Team Contacts Pagination Controls -->
                  @if (teamContactsTotalPages() > 0 && teamContacts().length > 0) {
                     <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
-                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
                         <div>
                         <p class="text-sm text-gray-300">
                             Showing
@@ -200,7 +201,8 @@ import { Contact, User } from '../../models/crm.models';
                             <span class="sr-only">Previous</span>
                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                             </button>
-                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ teamContactsCurrentPage() }} of {{ teamContactsTotalPages() }} </span>
+                            <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ teamContactsCurrentPage() }} of {{ teamContactsTotalPages() }} </span>
+                            <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ teamContactsCurrentPage() }} / {{ teamContactsTotalPages() }} </span>
                             <button (click)="changeTeamContactsPage(teamContactsCurrentPage() + 1)" [disabled]="teamContactsCurrentPage() >= teamContactsTotalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
                             <span class="sr-only">Next</span>
                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
@@ -256,9 +258,9 @@ export class UsersRolesComponent {
     return this.dataService.contacts().filter(c => teamIds.includes(c.ownerId));
   });
 
-  reassignOwner(type: 'contact', id: string, newOwnerId: string) {
+  async reassignOwner(type: 'contact', id: string, newOwnerId: string) {
     if (type === 'contact') {
-      this.dataService.reassignContactOwner(id, newOwnerId);
+      await this.dataService.reassignContactOwner(id, newOwnerId);
     }
   }
 

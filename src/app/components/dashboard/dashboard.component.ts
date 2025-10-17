@@ -3,7 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
-import { OpportunityStage, AppView, Contact, Opportunity, Task, Activity } from '../../models/crm.models';
+import { OpportunityStage, AppView, Contact, Opportunity, Task, Activity, User } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -93,9 +93,11 @@ import { AuthService } from '../../services/auth.service';
                       @for (stage of dealsByStageData(); track stage.name) {
                           <div class="flex flex-col items-center flex-1">
                               <div class="text-xs text-gray-400">{{ (stage.value / 1000).toFixed(0) }}k</div>
-                              <div class="w-full bg-sky-500 rounded-t-md" [style.height.%]="stage.percentage" title="{{ stage.name }}: {{ stage.value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }) }}"></div>
+                              <div class="w-full rounded-t-md" [class]="stage.color" [style.height.%]="stage.percentage" title="{{ stage.name }}: {{ stage.value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }) }}"></div>
                               <div class="text-xs font-medium text-gray-300 mt-1 text-center">{{ stage.name }}</div>
                           </div>
+                      } @empty {
+                          <p class="text-sm text-gray-400 w-full text-center self-center">No opportunity data for this period.</p>
                       }
                   </div>
               </div>
@@ -140,25 +142,50 @@ import { AuthService } from '../../services/auth.service';
               </div>
           </div>
 
-          <!-- Activity Breakdown -->
-          <div class="bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-700">
-              <h3 class="font-semibold text-lg mb-4 text-gray-100">Activity Breakdown</h3>
-              <div class="space-y-4">
-                  @for(activity of activityBreakdownData(); track activity.type) {
-                      <div>
-                          <div class="flex justify-between mb-1">
-                              <span class="text-sm font-medium text-gray-200">{{activity.type}}</span>
-                              <span class="text-sm font-medium text-gray-400">{{activity.count}} ({{activity.percentage.toFixed(0)}}%)</span>
-                          </div>
-                          <div class="w-full bg-gray-700 rounded-full h-2.5">
-                              <div class="h-2.5 rounded-full" [class]="activity.color" [style.width.%]="activity.percentage"></div>
-                          </div>
-                      </div>
-                  }
-                    @empty {
-                      <p class="text-sm text-gray-400">No activity data for this period.</p>
-                  }
-              </div>
+          <!-- Activity & Leaderboard Column -->
+          <div class="space-y-6">
+            <!-- Activity Breakdown -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-700">
+                <h3 class="font-semibold text-lg mb-4 text-gray-100">Activity Breakdown</h3>
+                <div class="space-y-4">
+                    @for(activity of activityBreakdownData(); track activity.type) {
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-200">{{activity.type}}</span>
+                                <span class="text-sm font-medium text-gray-400">{{activity.count}} ({{activity.percentage.toFixed(0)}}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                <div class="h-2.5 rounded-full" [class]="activity.color" [style.width.%]="activity.percentage"></div>
+                            </div>
+                        </div>
+                    }
+                      @empty {
+                        <p class="text-sm text-gray-400">No activity data for this period.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Sales Leaderboard -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-700">
+                <h3 class="font-semibold text-lg mb-4 text-gray-100">Sales Leaderboard</h3>
+                <ul class="space-y-4">
+                    @for (leader of salesLeaderboardData(); track leader.ownerId; let i = $index) {
+                        <li class="flex items-center space-x-3">
+                            <span class="text-lg font-bold w-6 text-center" [class.text-amber-300]="i === 0" [class.text-slate-300]="i === 1" [class.text-orange-400]="i === 2" [class.text-gray-400]="i > 2">{{ i + 1 }}</span>
+                            <img [src]="leader.profilePictureUrl" [alt]="leader.name" class="w-10 h-10 rounded-full">
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-100">{{ leader.name }}</p>
+                                <p class="text-sm text-gray-400">{{ leader.dealsWon }} deals won</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-lg text-emerald-400">{{ leader.totalValue | currency:'USD':'symbol':'1.0-0' }}</p>
+                            </div>
+                        </li>
+                    } @empty {
+                        <p class="text-sm text-gray-400">No sales data for this period.</p>
+                    }
+                </ul>
+            </div>
           </div>
       </div>
     </div>
@@ -176,6 +203,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   dashboardOwnerFilter = signal<string>('all');
   lastRefreshed = signal<Date | null>(null);
   private refreshInterval: any;
+
+  private openOpportunityStages = [
+    OpportunityStage.Prospecting,
+    OpportunityStage.Qualification,
+    OpportunityStage.Proposal,
+    OpportunityStage.Negotiation
+  ];
 
   ngOnInit(): void {
     this.lastRefreshed.set(new Date());
@@ -223,8 +257,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   visibleActivities = computed(() => this.dataService.activities().filter(a => this.getVisibleUserIds().includes(a.ownerId)));
 
   // --- COMPUTED SIGNALS FOR DASHBOARD ---
-  // Fix: Converted from an arrow function property to a class method to ensure correct generic type inference.
-  private getDashboardFilteredData<T extends { createdAt?: string; ownerId: string; startTime?: string }>(dataSet: T[]): T[] {
+  private getDashboardFilteredData<T extends { ownerId: string }>(dataSet: T[]): T[] {
     const now = new Date();
     const dateFilter = this.dashboardDateFilter();
     let startDate: Date | null = null;
@@ -235,7 +268,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     
     let filtered = dataSet;
     if (startDate) {
-      filtered = filtered.filter(item => new Date(item.createdAt ?? item.startTime!) >= startDate!);
+      filtered = filtered.filter(item => {
+        // Use a type assertion to safely access properties that only exist on some of the types.
+        const itemWithDate = item as { createdAt?: string; startTime?: string };
+        const dateString = itemWithDate.createdAt ?? itemWithDate.startTime;
+        if (!dateString) return false;
+        return new Date(dateString).getTime() >= startDate!.getTime();
+      });
     }
     if (this.dashboardOwnerFilter() !== 'all') {
       filtered = filtered.filter(item => item.ownerId === this.dashboardOwnerFilter());
@@ -272,22 +311,69 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   pipelineFunnelData = computed(() => {
-    const opps = this.dashboardFilteredOpps();
-    const stages = [OpportunityStage.Prospecting, OpportunityStage.Qualification, OpportunityStage.Proposal, OpportunityStage.Negotiation];
-    const totalValue = opps.reduce((acc, o) => acc + o.value, 0) || 1;
+    const openOpps = this.dashboardFilteredOpps().filter(o => this.openOpportunityStages.includes(o.stage));
+    const totalValue = openOpps.reduce((acc, o) => acc + o.value, 0) || 1;
 
-    return stages.map(stage => {
-      const stageOpps = opps.filter(o => o.stage === stage);
-      const value = stageOpps.reduce((sum, o) => sum + o.value, 0);
-      return { name: stage, count: stageOpps.length, value, percentage: (value / totalValue) * 100 };
+    const valueAndCountByStage = openOpps.reduce<{[key in OpportunityStage]?: { value: number, count: number }}>((acc, opp) => {
+        if (!acc[opp.stage]) {
+            acc[opp.stage] = { value: 0, count: 0 };
+        }
+        acc[opp.stage]!.value += opp.value;
+        acc[opp.stage]!.count += 1;
+        return acc;
+    }, {});
+
+    return this.openOpportunityStages.map(stage => {
+      const stageData = valueAndCountByStage[stage] || { value: 0, count: 0 };
+      return { 
+          name: stage, 
+          count: stageData.count, 
+          value: stageData.value, 
+          percentage: (stageData.value / totalValue) * 100 
+        };
     });
   });
 
   dealsByStageData = computed(() => {
-    const opportunityStages = Object.values(OpportunityStage);
-    const data = opportunityStages.map(stage => ({ name: stage, value: this.dashboardFilteredOpps().filter(o => o.stage === stage).reduce((sum, o) => sum + o.value, 0) }));
-    const maxValue = Math.max(...data.map(d => d.value), 1);
-    return data.map(d => ({ ...d, percentage: (d.value / maxValue) * 100 }));
+    const allFilteredOpps = this.dashboardFilteredOpps();
+    
+    if (allFilteredOpps.length === 0) {
+      return [];
+    }
+    
+    const valueByStage = allFilteredOpps.reduce<{[key in OpportunityStage]?: number}>((acc, opp) => {
+        acc[opp.stage] = (acc[opp.stage] || 0) + opp.value;
+        return acc;
+    }, {});
+
+    const allStages = Object.values(OpportunityStage);
+    
+    const dataWithValues = allStages
+      .map(stage => ({
+        name: stage,
+        value: valueByStage[stage] || 0
+      }))
+      .filter(d => d.value > 0); 
+
+    if (dataWithValues.length === 0) {
+        return [];
+    }
+
+    const maxValue = Math.max(...dataWithValues.map(d => d.value), 1);
+    
+    const getColorForStage = (stageName: OpportunityStage): string => {
+        switch(stageName) {
+            case OpportunityStage.ClosedWon: return 'bg-emerald-500';
+            case OpportunityStage.ClosedLost: return 'bg-rose-500';
+            default: return 'bg-sky-500';
+        }
+    }
+
+    return dataWithValues.map(d => ({ 
+        ...d, 
+        percentage: (d.value / maxValue) * 100,
+        color: getColorForStage(d.name as OpportunityStage)
+    }));
   });
 
   dashboardTasks = computed(() => {
@@ -296,21 +382,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   monthlyRevenueData = computed(() => {
-    const opps = this.dashboardFilteredOpps().filter(o => o.stage === OpportunityStage.ClosedWon);
+    let opps = this.visibleOpportunities().filter(o => o.stage === OpportunityStage.ClosedWon);
+    if (this.dashboardOwnerFilter() !== 'all') {
+      opps = opps.filter(item => item.ownerId === this.dashboardOwnerFilter());
+    }
+
     const dataByMonth: { [key: string]: number } = {};
-    const months = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        return { label: d.toLocaleString('default', { month: 'short' }), key: `${d.getFullYear()}-${d.getMonth()}` };
-    }).reverse();
+    const months: { label: string, key: string }[] = [];
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        months.push({
+            label: d.toLocaleString('default', { month: 'short' }),
+            key: `${d.getFullYear()}-${d.getMonth()}`
+        });
+    }
 
     months.forEach(m => dataByMonth[m.key] = 0);
+
     opps.forEach(opp => {
-        const key = `${new Date(opp.closeDate).getFullYear()}-${new Date(opp.closeDate).getMonth()}`;
-        if (dataByMonth.hasOwnProperty(key)) dataByMonth[key] += opp.value;
+        const closeDate = new Date(opp.closeDate.replace(/-/g, '/'));
+        const key = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
+        if (key in dataByMonth) {
+            // FIX: The left-hand side of an arithmetic operation must be of type 'number'.
+            // `dataByMonth[key]` can be `undefined`, so we provide a fallback of `0`.
+            dataByMonth[key] = (dataByMonth[key] || 0) + opp.value;
+        }
     });
 
-    const data = months.map(m => ({ label: m.label, value: dataByMonth[m.key] }));
+    const data = months.map(m => ({ label: m.label, value: dataByMonth[m.key] || 0 }));
     if (data.every(d => d.value === 0)) return [];
     const maxValue = Math.max(...data.map(d => d.value), 1);
     return data.map(d => ({ ...d, percentage: (d.value / maxValue) * 100 }));
@@ -320,9 +420,48 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const activities = this.dashboardFilteredActivities();
     if (!activities.length) return [];
     const total = activities.length || 1;
-    const breakdown = activities.reduce((acc, a) => ({ ...acc, [a.type]: (acc[a.type] || 0) + 1 }), {} as {[key:string]:number});
+    const breakdown = activities.reduce<Record<string, number>>((acc, a) => {
+      acc[a.type] = (acc[a.type] || 0) + 1;
+      return acc;
+    }, {});
     const colors: { [key: string]: string } = { 'Call summary': 'bg-amber-400', 'Email': 'bg-sky-400', 'Meeting': 'bg-violet-400', 'Note': 'bg-slate-400' };
     return Object.entries(breakdown).map(([type, count]) => ({ type, count, percentage: (count / total) * 100, color: colors[type] }));
+  });
+
+  salesLeaderboardData = computed(() => {
+    const opps = this.dashboardFilteredOpps().filter(o => o.stage === OpportunityStage.ClosedWon);
+    if (!opps.length) return [];
+  
+    const valueByOwner = opps.reduce<{[key: string]: { totalValue: number, dealsWon: number }}>((acc, opp) => {
+        if (!acc[opp.ownerId]) {
+            acc[opp.ownerId] = { totalValue: 0, dealsWon: 0 };
+        }
+        acc[opp.ownerId].totalValue += opp.value;
+        acc[opp.ownerId].dealsWon += 1;
+        return acc;
+    }, {});
+  
+    const allUsers = this.dataService.users();
+  
+    // FIX: A user might not be found for an ownerId, resulting in `undefined`.
+    // Spreading `undefined` is an error. We now check for the user's existence
+    // and filter out any null results to ensure type safety.
+    return Object.entries(valueByOwner)
+        .map(([ownerId, data]) => {
+            const user = allUsers.find(u => u.id === ownerId);
+            if (!user) {
+              return null;
+            }
+            return {
+                ...data,
+                ownerId,
+                name: user.name,
+                profilePictureUrl: user.profilePictureUrl
+            };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .sort((a, b) => b.totalValue - a.totalValue)
+        .slice(0, 5); // Top 5
   });
 
   navigateToFilteredView(kpi: string) {

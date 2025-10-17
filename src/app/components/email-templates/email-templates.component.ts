@@ -12,14 +12,14 @@ import { EmailTemplate } from '../../models/crm.models';
     <div>
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
           <h1 class="text-3xl font-bold text-gray-100">Email Templates</h1>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <input 
               type="text" 
               placeholder="Search templates..." 
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
-              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-48">
-            <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-48 order-first sm:order-none">
+            <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
               <option value="created_desc">Newest First</option>
               <option value="created_asc">Oldest First</option>
               <option value="name_asc">Name (A-Z)</option>
@@ -70,7 +70,7 @@ import { EmailTemplate } from '../../models/crm.models';
       <!-- Pagination Controls -->
       @if (totalPages() > 0 && filteredTemplates().length > 0) {
         <div class="flex items-center justify-between mt-6 py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-lg shadow-sm">
-          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
             <div>
               <p class="text-sm text-gray-300">
                 Showing
@@ -92,7 +92,8 @@ import { EmailTemplate } from '../../models/crm.models';
                 <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 </button>
-                <span class="relative inline-flex items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ currentPage() }} / {{ totalPages() }} </span>
                 <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                 </button>
@@ -202,14 +203,14 @@ export class EmailTemplatesComponent {
     this.uiService.openTemplateEditor(template);
   }
 
-  duplicateTemplate(template: EmailTemplate) {
-    this.dataService.duplicateTemplate(template);
+  async duplicateTemplate(template: EmailTemplate) {
+    await this.dataService.duplicateTemplate(template);
     this.toggleDropdown(template.id);
   }
 
-  deleteTemplate(templateId: string) {
+  async deleteTemplate(templateId: string) {
     if (confirm('Are you sure you want to delete this template?')) {
-      this.dataService.deleteTemplate(templateId);
+      await this.dataService.deleteTemplate(templateId);
     }
     this.toggleDropdown(templateId);
   }

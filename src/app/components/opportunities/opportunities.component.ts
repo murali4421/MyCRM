@@ -22,13 +22,24 @@ import { AuthService } from '../../services/auth.service';
       <div class="w-full overflow-x-auto">
         <div class="flex space-x-4 p-2 min-w-max">
             @for(stage of opportunityStages; track stage) {
-              <div class="bg-gray-900 rounded-lg w-72 flex-shrink-0">
+              <div class="bg-gray-900 rounded-lg w-72 flex-shrink-0 flex flex-col">
                   <div class="p-3 font-semibold text-gray-200 border-b border-gray-700">
                       {{ stage }} ({{ opportunitiesByStage()[stage]?.length || 0 }})
                   </div>
-                  <div class="p-2 space-y-2 h-[calc(100vh-20rem)] overflow-y-auto">
+                  <div 
+                    class="p-2 space-y-2 flex-1 h-[calc(100vh-20rem)] overflow-y-auto transition-colors"
+                    (dragover)="onDragOver($event, stage)"
+                    (dragleave)="onDragLeave($event)"
+                    (drop)="onDrop($event, stage)"
+                    [class.bg-gray-700/50]="dragOverStage() === stage"
+                  >
                       @for(opp of opportunitiesByStage()[stage]; track opp.id) {
-                          <div class="bg-gray-800 rounded-md shadow-sm p-3 border border-gray-700 cursor-pointer hover:shadow-md hover:border-indigo-500" (click)="uiService.openOpportunityModal(opp)">
+                          <div 
+                            class="bg-gray-800 rounded-md shadow-sm p-3 border border-gray-700 cursor-pointer hover:shadow-md hover:border-indigo-500" 
+                            (click)="uiService.openOpportunityModal(opp)"
+                            draggable="true"
+                            (dragstart)="onDragStart($event, opp.id)"
+                           >
                               <p class="font-semibold text-sm text-gray-100">{{ opp.name }}</p>
                               <p class="text-xs text-gray-400">{{ dataService.getCompanyById(opp.companyId)?.name }}</p>
                               <div class="flex justify-between items-center mt-2">
@@ -38,7 +49,13 @@ import { AuthService } from '../../services/auth.service';
                           </div>
                       }
                       @empty {
-                          <div class="p-4 text-center text-sm text-gray-500">No opportunities in this stage.</div>
+                          <div class="p-4 text-center text-sm text-gray-500 h-full flex items-center justify-center">
+                            @if (dragOverStage() === stage) {
+                                <span>Drop here</span>
+                            } @else {
+                                <span>No opportunities</span>
+                            }
+                          </div>
                       }
                   </div>
               </div>
@@ -54,6 +71,8 @@ export class OpportunitiesComponent {
   uiService = inject(UiService);
   authService = inject(AuthService);
 
+  draggedOpportunityId = signal<string | null>(null);
+  dragOverStage = signal<OpportunityStage | null>(null);
   opportunityStages = Object.values(OpportunityStage);
 
   private getVisibleUserIds = computed(() => {
@@ -85,12 +104,39 @@ export class OpportunitiesComponent {
   visibleOpportunities = computed(() => this.dataService.opportunities().filter(o => this.getVisibleUserIds().includes(o.ownerId)));
   
   opportunitiesByStage = computed(() => {
-    return this.visibleOpportunities().reduce((acc, opp) => {
+    return this.visibleOpportunities().reduce<{[key in OpportunityStage]?: Opportunity[]}>((acc, opp) => {
       if (!acc[opp.stage]) {
         acc[opp.stage] = [];
       }
-      acc[opp.stage].push(opp);
+      acc[opp.stage]!.push(opp);
       return acc;
-    }, {} as { [key in OpportunityStage]?: Opportunity[] });
+    }, {});
   });
+
+  onDragStart(event: DragEvent, oppId: string) {
+    this.draggedOpportunityId.set(oppId);
+    event.dataTransfer?.setData('text/plain', oppId);
+  }
+
+  onDragOver(event: DragEvent, stage: OpportunityStage) {
+    event.preventDefault();
+    this.dragOverStage.set(stage);
+  }
+
+  onDragLeave(event: DragEvent) {
+    this.dragOverStage.set(null);
+  }
+
+  onDrop(event: DragEvent, stage: OpportunityStage) {
+    event.preventDefault();
+    const oppId = this.draggedOpportunityId();
+    if (oppId) {
+      const opportunity = this.dataService.opportunities().find(o => o.id === oppId);
+      if (opportunity && opportunity.stage !== stage) {
+        this.dataService.updateOpportunity({ ...opportunity, stage });
+      }
+    }
+    this.draggedOpportunityId.set(null);
+    this.dragOverStage.set(null);
+  }
 }

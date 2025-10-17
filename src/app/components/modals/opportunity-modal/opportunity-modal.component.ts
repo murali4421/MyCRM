@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Opportunity, OpportunityStage, Contact } from '../../../models/crm.models';
+import { Opportunity, OpportunityStage, Contact, Activity } from '../../../models/crm.models';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { AuthService } from '../../../services/auth.service';
+import { GeminiService } from '../../../services/gemini.service';
 
 @Component({
   selector: 'app-opportunity-modal',
@@ -66,6 +67,35 @@ import { AuthService } from '../../../services/auth.service';
               </div>
             </div>
 
+            <!-- AI Assistant -->
+            @if(!isNew) {
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-semibold text-gray-100 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
+                            AI Assistant
+                        </h3>
+                         <button type="button" (click)="getAiSuggestion()" [disabled]="geminiService.isGeneratingAction()" class="bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-md hover:bg-indigo-500/20 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                            @if (geminiService.isGeneratingAction()) {
+                                <span class="flex items-center">
+                                    <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    Thinking...
+                                </span>
+                            } @else {
+                                <span>Get Next Best Action</span>
+                            }
+                        </button>
+                    </div>
+                     @if (aiSuggestion()) {
+                      <div class="bg-gray-900 p-4 rounded-md border border-gray-700">
+                          <p class="text-sm text-gray-300">{{ aiSuggestion() }}</p>
+                      </div>
+                    } @else if (!geminiService.isGeneratingAction()) {
+                        <p class="text-sm text-gray-400">Click the button to get a suggestion for your next step with this opportunity.</p>
+                    }
+                </div>
+            }
+
             @if(!isNew && opportunityContacts().length > 0) {
               <div class="mt-6 pt-6 border-t border-gray-700">
                   <h3 class="text-lg font-semibold text-gray-100 mb-4">Related Contacts</h3>
@@ -104,15 +134,23 @@ export class OpportunityModalComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   authService = inject(AuthService);
+  geminiService = inject(GeminiService);
 
   isNew = false;
   opportunityModel = signal<Partial<Opportunity>>({});
   opportunityStages = Object.values(OpportunityStage);
+  aiSuggestion = signal<string | null>(null);
 
   opportunityContacts = computed(() => {
     const companyId = this.opportunityModel()?.companyId;
     if (!companyId) return [];
     return this.dataService.contacts().filter(c => c.companyId === companyId);
+  });
+
+  relatedActivities = computed(() => {
+    const oppId = this.opportunityModel()?.id;
+    if (!oppId) return [];
+    return this.dataService.activities().filter(a => a.relatedEntity?.type === 'opportunity' && a.relatedEntity.id === oppId);
   });
 
   constructor() {
@@ -130,6 +168,7 @@ export class OpportunityModalComponent {
                     closeDate: new Date().toISOString().split('T')[0]
                 });
             }
+            this.aiSuggestion.set(null);
         });
     });
   }
@@ -143,7 +182,16 @@ export class OpportunityModalComponent {
     });
   }
 
-  saveOpportunity(form: NgForm) {
+  async getAiSuggestion() {
+    const opp = this.opportunityModel();
+    if (!opp || !opp.id) return;
+
+    this.aiSuggestion.set(null); // Clear previous suggestion
+    const suggestion = await this.geminiService.generateNextBestAction(opp as Opportunity, this.relatedActivities());
+    this.aiSuggestion.set(suggestion);
+  }
+
+  async saveOpportunity(form: NgForm) {
     if (form.invalid) return;
     const formData = { ...this.opportunityModel(), ...form.value };
 
@@ -153,16 +201,16 @@ export class OpportunityModalComponent {
         id: `opp-${Date.now()}`,
         createdAt: new Date().toISOString(),
       };
-      this.dataService.addOpportunity(newOpp);
+      await this.dataService.addOpportunity(newOpp);
     } else {
-      this.dataService.updateOpportunity(formData as Opportunity);
+      await this.dataService.updateOpportunity(formData as Opportunity);
     }
     this.uiService.closeOpportunityModal();
   }
   
-  deleteOpportunity() {
+  async deleteOpportunity() {
     if(this.opportunityModel()?.id && confirm('Are you sure you want to delete this opportunity?')) {
-        this.dataService.deleteOpportunity(this.opportunityModel().id!);
+        await this.dataService.deleteOpportunity(this.opportunityModel().id!);
         this.uiService.closeOpportunityModal();
     }
   }

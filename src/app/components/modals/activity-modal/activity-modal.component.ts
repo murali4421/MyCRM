@@ -1,5 +1,4 @@
 // FIX: Completed the implementation of ActivityModalComponent, which was previously missing/truncated, to resolve the export error.
-// FIX: Import 'computed' from '@angular/core' to resolve the 'Cannot find name' error.
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -153,7 +152,7 @@ export class ActivityModalComponent {
     }
   }
 
-  saveActivity(form: NgForm) {
+  async saveActivity(form: NgForm) {
     if (form.invalid) return;
     const formData = { ...this.activityModel(), ...form.value };
     
@@ -169,9 +168,9 @@ export class ActivityModalComponent {
         ...activityData,
         id: `act-${Date.now()}`,
       } as Activity;
-      this.dataService.addActivity(newActivity);
+      await this.dataService.addActivity(newActivity);
     } else {
-      this.dataService.updateActivity(activityData as Activity);
+      await this.dataService.updateActivity(activityData as Activity);
     }
     this.closeModal();
   }

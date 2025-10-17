@@ -11,13 +11,13 @@ import { UiService } from '../../services/ui.service';
     <div>
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
           <h1 class="text-3xl font-bold text-gray-100">Companies</h1>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <input 
               type="text" 
               placeholder="Search companies..." 
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
-              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
             <button (click)="uiService.openCompanyDetails(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">New Company</button>
@@ -37,7 +37,11 @@ import { UiService } from '../../services/ui.service';
               @for (company of paginatedCompanies(); track company.id) {
                 <tr class="hover:bg-gray-700">
                   @if (isColumnVisible('name')) {
-                    <td class="px-4 py-3 text-sm font-medium text-gray-100">{{company.name}}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-100">
+                      <a href="#" (click)="$event.preventDefault(); showContactPopover($event, company.id)" class="hover:text-indigo-400 hover:underline">
+                        {{company.name}}
+                      </a>
+                    </td>
                   }
                   @if (isColumnVisible('industry')) {
                     <td class="px-4 py-3 text-sm text-gray-300">{{company.industry}}</td>
@@ -67,7 +71,7 @@ import { UiService } from '../../services/ui.service';
       <!-- Pagination Controls -->
       @if (totalPages() > 0 && filteredCompanies().length > 0) {
         <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
-          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
             <div>
               <p class="text-sm text-gray-300">
                 Showing
@@ -90,7 +94,8 @@ import { UiService } from '../../services/ui.service';
                   <span class="sr-only">Previous</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 </button>
-                <span class="relative inline-flex items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ currentPage() }} / {{ totalPages() }} </span>
                 <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
                   <span class="sr-only">Next</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
@@ -166,5 +171,16 @@ export class CompaniesComponent {
 
   changeItemsPerPage(value: string | number) {
     this.uiService.setItemsPerPage(Number(value));
+  }
+
+  showContactPopover(event: MouseEvent, companyId: string) {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    this.uiService.openContactPopover({
+      companyId: companyId,
+      position: {
+        x: rect.left,
+        y: rect.bottom + 8
+      }
+    });
   }
 }

@@ -146,7 +146,7 @@ export class CompanyModalComponent {
     });
   }
 
-  saveCompany(form: NgForm) {
+  async saveCompany(form: NgForm) {
     if (form.invalid) return;
     const formData = { ...this.companyModel(), ...form.value, logoUrl: this.logoUrl() };
 
@@ -156,16 +156,16 @@ export class CompanyModalComponent {
         id: `comp-${Date.now()}`,
         createdAt: new Date().toISOString(),
       };
-      this.dataService.addCompany(newCompany);
+      await this.dataService.addCompany(newCompany);
     } else {
-      this.dataService.updateCompany(formData as Company);
+      await this.dataService.updateCompany(formData as Company);
     }
     this.uiService.closeCompanyDetails();
   }
 
-  deleteCompany() {
+  async deleteCompany() {
     if(this.companyModel()?.id && confirm('Are you sure you want to delete this company?')) {
-        this.dataService.deleteCompany(this.companyModel().id!);
+        await this.dataService.deleteCompany(this.companyModel().id!);
         this.uiService.closeCompanyDetails();
     }
   }

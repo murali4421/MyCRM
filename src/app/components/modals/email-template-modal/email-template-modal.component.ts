@@ -160,7 +160,7 @@ export class EmailTemplateModalComponent implements AfterViewInit {
     }
   }
 
-  saveTemplate(form: NgForm) {
+  async saveTemplate(form: NgForm) {
     if (form.invalid) return;
     
     const formData = {
@@ -177,7 +177,7 @@ export class EmailTemplateModalComponent implements AfterViewInit {
         // FIX: Added the missing 'createdAt' property to conform to the EmailTemplate interface.
         createdAt: new Date().toISOString(),
       };
-      this.dataService.addTemplate(newTemplate);
+      await this.dataService.addTemplate(newTemplate);
     } else {
       // FIX: The EmailTemplate type requires createdAt, but it was missing from the update payload.
       // Although `formData` is cast to EmailTemplate, it's safer to ensure all required fields exist.
@@ -186,7 +186,7 @@ export class EmailTemplateModalComponent implements AfterViewInit {
           ...this.templateModel(),
           ...formData
       } as EmailTemplate;
-      this.dataService.updateTemplate(updatedTemplate);
+      await this.dataService.updateTemplate(updatedTemplate);
     }
     this.uiService.closeTemplateEditor();
   }

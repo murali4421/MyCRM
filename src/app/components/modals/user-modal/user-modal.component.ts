@@ -82,7 +82,7 @@ export class UserModalComponent {
     });
   }
 
-  saveUser(form: NgForm) {
+  async saveUser(form: NgForm) {
     if (form.invalid) return;
     const formData = { ...this.userModel(), ...form.value };
 
@@ -93,9 +93,9 @@ export class UserModalComponent {
         status: 'Invited',
         profilePictureUrl: `https://i.pravatar.cc/150?u=${Date.now()}`
       } as User;
-      this.dataService.addUser(newUser);
+      await this.dataService.addUser(newUser);
     } else {
-      this.dataService.updateUser(formData as User);
+      await this.dataService.updateUser(formData as User);
     }
     this.uiService.closeUserModal();
   }

@@ -8,6 +8,11 @@ type ColumnCustomizableTableName = 'companies' | 'contacts' | 'opportunities' | 
 type PaginatedTableName = ColumnCustomizableTableName | 'audit-log' | 'email-templates' | 'users' | 'team-contacts';
 type TableColumnConfigs = Record<ColumnCustomizableTableName, ColumnConfig[]>;
 
+export interface ContactPopoverData {
+  companyId: string;
+  position: { x: number; y: number };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -102,6 +107,9 @@ export class UiService {
     itemsPerPage: 10,
     currentPage: {},
   });
+
+  // Contact Popover state
+  contactPopoverData = signal<ContactPopoverData | null>(null);
 
   constructor() {
     this.loadPaginationFromLocalStorage();
@@ -230,6 +238,15 @@ export class UiService {
   closeImportModal() {
     this.isImportModalOpen.set(false);
     this.importTarget.set(null);
+  }
+
+  // --- Contact Popover ---
+  openContactPopover(data: ContactPopoverData) {
+    this.contactPopoverData.set(data);
+  }
+
+  closeContactPopover() {
+    this.contactPopoverData.set(null);
   }
 
   // --- Pagination Management ---

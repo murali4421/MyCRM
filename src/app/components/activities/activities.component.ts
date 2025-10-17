@@ -15,7 +15,7 @@ import { AuthService } from '../../services/auth.service';
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
           <h1 class="text-3xl font-bold text-gray-100">Activities</h1>
            <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center space-x-1 bg-gray-700 rounded-md p-1 text-sm font-medium">
+            <div class="flex items-center space-x-1 bg-gray-700 rounded-md p-1 text-sm font-medium w-full sm:w-auto">
               <button 
                 (click)="viewMode.set('feed')" 
                 [class]="viewMode() === 'feed' ? 'bg-gray-900 text-gray-100 shadow-sm' : 'bg-transparent text-gray-400'" 
@@ -29,14 +29,14 @@ import { AuthService } from '../../services/auth.service';
                 Table
               </button>
             </div>
-            <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
               <option value="all">All Types</option>
               <option value="Call summary">Call summary</option>
               <option value="Email">Email</option>
               <option value="Meeting">Meeting</option>
               <option value="Note">Note</option>
             </select>
-            <select [ngModel]="ownerFilter()" (ngModelChange)="ownerFilter.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            <select [ngModel]="ownerFilter()" (ngModelChange)="ownerFilter.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
               <option value="all">All Owners</option>
               @for(user of dataService.users(); track user.id) {
                 <option [value]="user.id">{{ user.name }}</option>
@@ -47,7 +47,7 @@ import { AuthService } from '../../services/auth.service';
               placeholder="Search activities..." 
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
-              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
             <button (click)="uiService.openActivityEditModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Log Activity</button>
           </div>
       </div>
@@ -147,7 +147,7 @@ import { AuthService } from '../../services/auth.service';
        <!-- Pagination Controls -->
       @if (totalPages() > 0 && sortedActivities().length > 0) {
         <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
-          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
             <div>
               <p class="text-sm text-gray-300">
                 Showing
@@ -170,7 +170,8 @@ import { AuthService } from '../../services/auth.service';
                   <span class="sr-only">Previous</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 </button>
-                <span class="relative inline-flex items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ currentPage() }} / {{ totalPages() }} </span>
                 <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
                   <span class="sr-only">Next</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
@@ -280,9 +281,9 @@ export class ActivitiesComponent {
     this.uiService.openActivityEditModal(activity);
   }
 
-  deleteActivity(activityId: string) {
+  async deleteActivity(activityId: string) {
     if (confirm('Are you sure you want to delete this activity?')) {
-      this.dataService.deleteActivity(activityId);
+      await this.dataService.deleteActivity(activityId);
     }
   }
   

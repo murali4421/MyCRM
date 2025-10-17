@@ -113,10 +113,10 @@ export class ImportModalComponent {
     const headers = lines[0].split(',').map(h => h.trim());
     const data = lines.slice(1).map(line => {
       const values = line.split(',').map(v => v.trim());
-      return headers.reduce((obj, header, index) => {
-        obj[header] = values[index];
+      return headers.reduce<{[key:string]:string}>((obj, header, index) => {
+        obj[header] = values[index] || '';
         return obj;
-      }, {} as {[key:string]:string});
+      }, {});
     });
 
     this.uiService.csvHeaders.set(headers);
@@ -128,26 +128,42 @@ export class ImportModalComponent {
     this.uiService.fieldMappings.update(current => ({ ...current, [header]: field }));
   }
 
-  importData() {
+  async importData() {
     if (!this.isMappingValid()) return;
 
     const mappings = this.uiService.fieldMappings();
-    const invertedMappings = Object.entries(mappings).reduce((acc, [key, value]) => ({ ...acc, [value]: key }), {} as {[key:string]:string});
+    const invertedMappings: Record<string, string> = {};
+    for (const csvHeader of Object.keys(mappings)) {
+      const crmField = mappings[csvHeader];
+      if (crmField) {
+        invertedMappings[crmField] = csvHeader;
+      }
+    }
+
+    const importPromises: Promise<any>[] = [];
 
     this.uiService.csvData().forEach(row => {
       const target = this.uiService.importTarget();
       if (target === 'companies') {
+          const nameHeader = invertedMappings.name;
+          const industryHeader = invertedMappings.industry;
+          const websiteHeader = invertedMappings.website;
+          
+          if (!nameHeader) return;
+
           const newCompany: Company = {
             id: `comp-${Date.now()}-${Math.random()}`,
-            name: row[invertedMappings['name']],
-            industry: row[invertedMappings['industry']] || '',
-            website: row[invertedMappings['website']] || '',
+            name: row[nameHeader] || '',
+            industry: industryHeader ? row[industryHeader] || '' : '',
+            website: websiteHeader ? row[websiteHeader] || '' : '',
             createdAt: new Date().toISOString(),
           };
-          this.dataService.addCompany(newCompany);
+          importPromises.push(this.dataService.addCompany(newCompany));
       }
       // Implement for other types as needed
     });
+    
+    await Promise.all(importPromises);
     alert(`Successfully imported ${this.uiService.csvData().length} records.`);
     this.uiService.closeImportModal();
   }
