@@ -22,7 +22,7 @@ import { Contact } from '../../models/crm.models';
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('contacts')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('contacts')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
-            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Add Contact</button>
+            <button (click)="uiService.openContactModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Add Contact</button>
           </div>
       </div>
       <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
@@ -36,42 +36,6 @@ import { Contact } from '../../models/crm.models';
             </tr>
           </thead>
             <tbody class="bg-gray-800 divide-y divide-gray-700">
-              @if (isAdding()) {
-                <tr class="bg-gray-700/50">
-                  @if (isColumnVisible('name')) {
-                    <td class="px-4 py-2"><input type="text" [(ngModel)]="newContact.name" placeholder="Full Name" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
-                  }
-                  @if (isColumnVisible('email')) {
-                    <td class="px-4 py-2"><input type="email" [(ngModel)]="newContact.email" placeholder="Email" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
-                  }
-                  @if (isColumnVisible('phone')) {
-                    <td class="px-4 py-2"><input type="text" [(ngModel)]="newContact.phone" placeholder="Phone" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm"></td>
-                  }
-                  @if (isColumnVisible('company')) {
-                    <td class="px-4 py-2">
-                      <select [(ngModel)]="newContact.companyId" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm">
-                        <option [ngValue]="undefined" disabled>Select Company</option>
-                        @for (company of dataService.companies(); track company.id) {
-                          <option [value]="company.id">{{ company.name }}</option>
-                        }
-                      </select>
-                    </td>
-                  }
-                   @if (isColumnVisible('owner')) {
-                    <td class="px-4 py-2">
-                      <select [(ngModel)]="newContact.ownerId" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-2 py-1 text-sm">
-                        @for (user of dataService.users(); track user.id) {
-                          <option [value]="user.id">{{ user.name }}</option>
-                        }
-                      </select>
-                    </td>
-                  }
-                  <td class="px-4 py-2 text-right whitespace-nowrap">
-                    <button (click)="saveNewContact()" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 mr-2">Save</button>
-                    <button (click)="cancelAdd()" class="text-sm font-medium text-gray-400 hover:text-gray-200">Cancel</button>
-                  </td>
-                </tr>
-              }
               @for (contact of paginatedContacts(); track contact.id) {
                 <tr class="hover:bg-gray-700 cursor-pointer" (click)="uiService.openContactModal(contact)">
                   @if (isColumnVisible('name')) {
@@ -95,11 +59,9 @@ import { Contact } from '../../models/crm.models';
                 </tr>
               }
               @empty {
-                @if (!isAdding()) {
-                  <tr>
-                    <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No contacts found.</td>
-                  </tr>
-                }
+                <tr>
+                  <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No contacts found.</td>
+                </tr>
               }
             </tbody>
         </table>
@@ -152,8 +114,6 @@ export class ContactsComponent {
   authService = inject(AuthService);
 
   searchTerm = signal('');
-  isAdding = signal(false);
-  newContact: Partial<Contact> = {};
 
   constructor() {
     effect(() => {
@@ -251,39 +211,5 @@ export class ContactsComponent {
         relatedEntity: { type: 'contact', id: contact.id }
       });
     }
-  }
-
-  startAdding() {
-    this.newContact = {
-      name: '',
-      email: '',
-      phone: '',
-      companyId: undefined,
-      ownerId: this.authService.currentUser()?.id
-    };
-    this.isAdding.set(true);
-  }
-
-  cancelAdd() {
-    this.isAdding.set(false);
-  }
-
-  async saveNewContact() {
-    if (!this.newContact.name?.trim() || !this.newContact.email?.trim() || !this.newContact.companyId) {
-      alert('Name, email, and company are required.');
-      return;
-    }
-
-    const contactToAdd: Contact = {
-      id: `cont-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      name: this.newContact.name,
-      email: this.newContact.email,
-      phone: this.newContact.phone || '',
-      companyId: this.newContact.companyId,
-      ownerId: this.newContact.ownerId!,
-    };
-    await this.dataService.addContact(contactToAdd);
-    this.isAdding.set(false);
   }
 }

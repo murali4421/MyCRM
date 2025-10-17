@@ -1,5 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
-import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity } from '../models/crm.models';
+import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity, Project, Product } from '../models/crm.models';
 import { LoggingService } from './logging.service';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
@@ -22,6 +22,8 @@ export class DataService {
   users = signal<User[]>([]);
   roles = signal<Role[]>([]);
   emailTemplates = signal<EmailTemplate[]>([]);
+  projects = signal<Project[]>([]);
+  products = signal<Product[]>([]);
   
   constructor() {
     this.loadInitialData();
@@ -31,7 +33,7 @@ export class DataService {
     this.isLoading.set(true);
     try {
         const [
-            roles, users, companies, contacts, opportunities, tasks, activities, emailTemplates
+            roles, users, companies, contacts, opportunities, tasks, activities, emailTemplates, projects, products
         ] = await Promise.all([
             this.apiService.getRoles(),
             this.apiService.getUsers(),
@@ -41,6 +43,8 @@ export class DataService {
             this.apiService.getTasks(),
             this.apiService.getActivities(),
             this.apiService.getEmailTemplates(),
+            this.apiService.getProjects(),
+            this.apiService.getProducts(),
         ]);
 
         this.roles.set(roles);
@@ -51,6 +55,8 @@ export class DataService {
         this.tasks.set(tasks);
         this.activities.set(activities);
         this.emailTemplates.set(emailTemplates);
+        this.projects.set(projects);
+        this.products.set(products);
     } catch (error) {
         console.error("Failed to load initial data", error);
         // Handle error state in UI if necessary
@@ -221,6 +227,40 @@ export class DataService {
     const newTemplate = await this.apiService.addTemplate(newTemplateData);
     this.emailTemplates.update(t => [...t, newTemplate]);
     this.log('duplicate_template', `Duplicated template: ${template.name}`, { type: 'template', id: newTemplate.id });
+  }
+
+  async addProject(project: Project) {
+    const newProject = await this.apiService.addProject(project);
+    this.projects.update(p => [...p, newProject]);
+    this.log('add_project', `Added project: ${newProject.name}`, {type: 'project', id: newProject.id});
+  }
+  async updateProject(updated: Project) {
+    const updatedProject = await this.apiService.updateProject(updated);
+    this.projects.update(p => p.map(x => x.id === updatedProject.id ? updatedProject : x));
+    this.log('update_project', `Updated project: ${updatedProject.name}`, {type: 'project', id: updatedProject.id});
+  }
+  async deleteProject(id: string) {
+    const name = this.projects().find(p => p.id === id)?.name;
+    await this.apiService.deleteProject(id);
+    this.projects.update(p => p.filter(x => x.id !== id));
+    if(name) this.log('delete_project', `Deleted project: ${name}`, {type: 'project', id});
+  }
+
+  async addProduct(product: Product) {
+    const newProduct = await this.apiService.addProduct(product);
+    this.products.update(p => [...p, newProduct]);
+    this.log('add_product', `Added product: ${newProduct.name}`, {type: 'product', id: newProduct.id});
+  }
+  async updateProduct(updated: Product) {
+    const updatedProduct = await this.apiService.updateProduct(updated);
+    this.products.update(p => p.map(x => x.id === updatedProduct.id ? updatedProduct : x));
+    this.log('update_product', `Updated product: ${updatedProduct.name}`, {type: 'product', id: updatedProduct.id});
+  }
+  async deleteProduct(id: string) {
+    const name = this.products().find(p => p.id === id)?.name;
+    await this.apiService.deleteProduct(id);
+    this.products.update(p => p.filter(x => x.id !== id));
+    if(name) this.log('delete_product', `Deleted product: ${name}`, {type: 'product', id});
   }
 
 

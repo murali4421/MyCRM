@@ -257,7 +257,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   visibleActivities = computed(() => this.dataService.activities().filter(a => this.getVisibleUserIds().includes(a.ownerId)));
 
   // --- COMPUTED SIGNALS FOR DASHBOARD ---
-  private getDashboardFilteredData<T extends { ownerId: string }>(dataSet: T[]): T[] {
+  // FIX: Strengthened the generic constraint to ensure type safety for date-based filtering, which may resolve the arithmetic error by preventing incorrect type inference.
+  private getDashboardFilteredData<T extends { ownerId: string; createdAt?: string; startTime?: string }>(dataSet: T[]): T[] {
     const now = new Date();
     const dateFilter = this.dashboardDateFilter();
     let startDate: Date | null = null;
@@ -270,8 +271,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (startDate) {
       filtered = filtered.filter(item => {
         // Use a type assertion to safely access properties that only exist on some of the types.
-        const itemWithDate = item as { createdAt?: string; startTime?: string };
-        const dateString = itemWithDate.createdAt ?? itemWithDate.startTime;
+        const dateString = item.createdAt ?? item.startTime;
         if (!dateString) return false;
         return new Date(dateString).getTime() >= startDate!.getTime();
       });
@@ -346,7 +346,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return acc;
     }, {});
 
-    const allStages = Object.values(OpportunityStage);
+    // FIX: Cast Object.values to OpportunityStage[] to ensure type safety, which resolves the spread operator error by allowing correct type inference for `d`.
+    const allStages = Object.values(OpportunityStage) as OpportunityStage[];
     
     const dataWithValues = allStages
       .map(stage => ({
@@ -372,7 +373,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return dataWithValues.map(d => ({ 
         ...d, 
         percentage: (d.value / maxValue) * 100,
-        color: getColorForStage(d.name as OpportunityStage)
+        color: getColorForStage(d.name)
     }));
   });
 
@@ -404,9 +405,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const closeDate = new Date(opp.closeDate.replace(/-/g, '/'));
         const key = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
         if (key in dataByMonth) {
-            // FIX: The left-hand side of an arithmetic operation must be a number.
-            // `dataByMonth[key]` could be treated as `number | undefined`, so `|| 0` ensures it's a number.
-            dataByMonth[key] = (dataByMonth[key] || 0) + opp.value;
+            dataByMonth[key] = (dataByMonth[key] ?? 0) + opp.value;
         }
     });
 
@@ -443,9 +442,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
     const allUsers = this.dataService.users();
   
-    // FIX: Avoid spreading a potentially undefined result from `.find()`, which would cause a runtime error.
-    // Instead, find the user first, and if they exist, construct the leaderboard entry.
-    // Then, filter out any null results for users that might not have been found.
     return Object.entries(valueByOwner)
         .map(([ownerId, data]) => {
             const user = allUsers.find(u => u.id === ownerId);

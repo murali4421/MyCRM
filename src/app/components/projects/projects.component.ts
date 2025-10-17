@@ -3,25 +3,25 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
-import { Company } from '../../models/crm.models';
+import { Project } from '../../models/crm.models';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-companies',
+  selector: 'app-projects',
   imports: [CommonModule, FormsModule],
   template: `
     <div>
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-          <h1 class="text-3xl font-bold text-gray-100">Companies</h1>
+          <h1 class="text-3xl font-bold text-gray-100">Projects</h1>
           <div class="flex flex-wrap items-center gap-2">
             <input 
               type="text" 
-              placeholder="Search companies..." 
+              placeholder="Search projects..." 
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
-            <button (click)="uiService.openImportModal('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
-            <button (click)="uiService.activeColumnCustomization.set('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
-            <button (click)="uiService.openCompanyDetails(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Add Company</button>
+            <button (click)="uiService.activeColumnCustomization.set('projects')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
+            <button (click)="uiService.openProjectModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Add Project</button>
           </div>
       </div>
       <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
@@ -35,32 +35,38 @@ import { Company } from '../../models/crm.models';
             </tr>
           </thead>
             <tbody class="bg-gray-800 divide-y divide-gray-700">
-              @for (company of paginatedCompanies(); track company.id) {
-                <tr class="hover:bg-gray-700 cursor-pointer" (click)="uiService.openCompanyDetails(company)">
+              @for (project of paginatedProjects(); track project.id) {
+                <tr class="hover:bg-gray-700 cursor-pointer" (click)="uiService.openProjectModal(project)">
                   @if (isColumnVisible('name')) {
-                    <td class="px-4 py-3 text-sm font-medium text-gray-100">
-                      <a href="#" (click)="$event.preventDefault(); $event.stopPropagation(); showContactPopover($event, company.id)" class="hover:text-indigo-400 hover:underline">
-                        {{company.name}}
-                      </a>
-                    </td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-100">{{project.name}}</td>
                   }
-                  @if (isColumnVisible('industry')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">{{company.industry}}</td>
+                  @if (isColumnVisible('company')) {
+                    <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getCompanyById(project.companyId)?.name }}</td>
                   }
-                  @if (isColumnVisible('website')) {
+                  @if (isColumnVisible('status')) {
                     <td class="px-4 py-3 text-sm text-gray-300">
-                      <a [href]="company.website" (click)="$event.stopPropagation()" target="_blank" class="text-indigo-400 hover:underline">{{company.website}}</a>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getStatusBadgeClass(project.status)">
+                            {{ project.status }}
+                        </span>
                     </td>
                   }
-                  @if (isColumnVisible('createdAt')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">{{company.createdAt | date:'mediumDate'}}</td>
+                  @if (isColumnVisible('budget')) {
+                    <td class="px-4 py-3 text-sm text-gray-300">{{project.budget | currency}}</td>
                   }
-                   <td class="px-4 py-3"></td>
+                   @if (isColumnVisible('endDate')) {
+                    <td class="px-4 py-3 text-sm text-gray-300">{{project.endDate | date:'mediumDate'}}</td>
+                  }
+                  @if (isColumnVisible('owner')) {
+                    <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getUserById(project.ownerId)?.name }}</td>
+                  }
+                  <td class="px-4 py-3 text-sm text-right">
+                    <button (click)="$event.stopPropagation(); uiService.openProjectModal(project)" class="text-indigo-400 hover:text-indigo-300 font-medium">Details</button>
+                  </td>
                 </tr>
               }
               @empty {
                 <tr>
-                  <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No companies found.</td>
+                    <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No projects found.</td>
                 </tr>
               }
             </tbody>
@@ -68,7 +74,7 @@ import { Company } from '../../models/crm.models';
       </div>
 
       <!-- Pagination Controls -->
-      @if (totalPages() > 0 && filteredCompanies().length > 0) {
+      @if (totalPages() > 0 && filteredProjects().length > 0) {
         <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
           <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
             <div>
@@ -78,7 +84,7 @@ import { Company } from '../../models/crm.models';
                 to
                 <span class="font-medium">{{ endItemNumber() }}</span>
                 of
-                <span class="font-medium">{{ filteredCompanies().length }}</span>
+                <span class="font-medium">{{ filteredProjects().length }}</span>
                 results
               </p>
             </div>
@@ -108,78 +114,103 @@ import { Company } from '../../models/crm.models';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompaniesComponent {
+export class ProjectsComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
+  authService = inject(AuthService);
 
   searchTerm = signal('');
 
   constructor() {
     effect(() => {
-      // When the search term changes, reset the current page to 1.
       this.searchTerm(); // establish dependency
-      this.uiService.setCurrentPage('companies', 1);
+      this.uiService.setCurrentPage('projects', 1);
     });
   }
 
-  columns = computed(() => this.uiService.tableColumnConfigs().companies);
+  private getVisibleUserIds = computed(() => {
+    const currentUser = this.authService.currentUser();
+    const allRoles = this.dataService.roles();
+
+    if (!currentUser || !currentUser.roleId || !allRoles.length) {
+      return [];
+    }
+    
+    const userRole = allRoles.find(r => r.id === currentUser.roleId);
+
+    if (!userRole || !userRole.name) {
+      return [];
+    }
+  
+    if (userRole.name === 'Admin') {
+      return this.dataService.users().map(u => u.id);
+    }
+    
+    if (userRole.name === 'Manager') {
+      const teamMemberIds = this.dataService.users().filter(u => u.managerId === currentUser.id).map(u => u.id);
+      return [currentUser.id, ...teamMemberIds];
+    }
+    
+    return [currentUser.id]; // Sales Rep
+  });
+
+  visibleProjects = computed(() => this.dataService.projects().filter(p => this.getVisibleUserIds().includes(p.ownerId)));
+
+  columns = computed(() => this.uiService.tableColumnConfigs().projects);
   visibleColumns = computed(() => this.columns().filter(c => c.visible));
   isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
 
-  filteredCompanies = computed(() => {
+  filteredProjects = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.dataService.companies().filter(company => 
-      company.name.toLowerCase().includes(term) ||
-      company.industry.toLowerCase().includes(term)
+    return this.visibleProjects().filter(project => 
+      project.name.toLowerCase().includes(term) ||
+      (this.dataService.getCompanyById(project.companyId)?.name.toLowerCase() || '').includes(term)
     );
   });
 
-  // Pagination signals
   itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  currentPage = computed(() => this.uiService.pagination().currentPage['companies'] || 1);
+  currentPage = computed(() => this.uiService.pagination().currentPage['projects'] || 1);
   totalPages = computed(() => {
-    const total = this.filteredCompanies().length;
+    const total = this.filteredProjects().length;
     const perPage = this.itemsPerPage();
     if (total === 0) return 0;
     return Math.ceil(total / perPage);
   });
 
-  paginatedCompanies = computed(() => {
-    const allCompanies = this.filteredCompanies();
+  paginatedProjects = computed(() => {
+    const allProjects = this.filteredProjects();
     const start = (this.currentPage() - 1) * this.itemsPerPage();
     const end = start + this.itemsPerPage();
-    return allCompanies.slice(start, end);
+    return allProjects.slice(start, end);
   });
   
   startItemNumber = computed(() => {
-    const total = this.filteredCompanies().length;
+    const total = this.filteredProjects().length;
     if (total === 0) return 0;
     return (this.currentPage() - 1) * this.itemsPerPage() + 1;
   });
 
   endItemNumber = computed(() => {
-    return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredCompanies().length);
+    return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredProjects().length);
   });
 
-  // Methods to handle pagination changes
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
-      this.uiService.setCurrentPage('companies', newPage);
+      this.uiService.setCurrentPage('projects', newPage);
     }
   }
 
   changeItemsPerPage(value: string | number) {
     this.uiService.setItemsPerPage(Number(value));
   }
-
-  showContactPopover(event: MouseEvent, companyId: string) {
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    this.uiService.openContactPopover({
-      companyId: companyId,
-      position: {
-        x: rect.left,
-        y: rect.bottom + 8
-      }
-    });
+  
+  getStatusBadgeClass(status: Project['status']): string {
+    const classMap: Record<Project['status'], string> = {
+      'Planning': 'bg-gray-500/10 text-gray-300',
+      'In Progress': 'bg-sky-500/10 text-sky-300',
+      'Completed': 'bg-emerald-500/10 text-emerald-300',
+      'On Hold': 'bg-amber-500/10 text-amber-300',
+    };
+    return classMap[status] || 'bg-gray-500/10 text-gray-300';
   }
 }

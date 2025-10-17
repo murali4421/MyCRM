@@ -171,8 +171,36 @@ export class CompanyModalComponent {
   }
 
   async deleteCompany() {
-    if(this.companyModel()?.id && confirm('Are you sure you want to delete this company?')) {
-        await this.dataService.deleteCompany(this.companyModel().id!);
+    const companyId = this.companyModel()?.id;
+    if (!companyId) return;
+
+    // Check for associated records
+    const associatedContacts = this.dataService.contacts().filter(c => c.companyId === companyId);
+    const associatedOpportunities = this.dataService.opportunities().filter(o => o.companyId === companyId);
+    const associatedProjects = this.dataService.projects().filter(p => p.companyId === companyId);
+
+    const hasAssociations = associatedContacts.length > 0 || associatedOpportunities.length > 0 || associatedProjects.length > 0;
+
+    if (hasAssociations) {
+      let message = `This company cannot be deleted because it is associated with:\n`;
+      if (associatedContacts.length > 0) {
+        message += `\n- ${associatedContacts.length} contact(s)`;
+      }
+      if (associatedOpportunities.length > 0) {
+        message += `\n- ${associatedOpportunities.length} opportunity(ies)`;
+      }
+      if (associatedProjects.length > 0) {
+        message += `\n- ${associatedProjects.length} project(s)`;
+      }
+      message += `\n\nPlease reassign or delete these records first.`;
+      
+      alert(message);
+      return;
+    }
+
+    // If no associations, proceed with deletion confirmation
+    if (confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
+        await this.dataService.deleteCompany(companyId);
         this.uiService.closeCompanyDetails();
     }
   }

@@ -1,4 +1,4 @@
-export type AppView = 'dashboard' | 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'users-roles' | 'email-templates' | 'audit-log';
+export type AppView = 'dashboard' | 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'users-roles' | 'email-templates' | 'audit-log' | 'projects' | 'products';
 export type AuthView = 'login' | 'signup' | 'forgotPassword' | 'resetPassword';
 export type ProfileView = 'personal-info' | 'password' | 'notifications';
 export type UsersAndRolesView = 'users' | 'roles' | 'team';
@@ -106,6 +106,30 @@ export interface EmailTemplate {
   body: string;
   createdAt: string;
 }
+
+export interface Project {
+  id: string;
+  name: string;
+  companyId: string;
+  status: 'Planning' | 'In Progress' | 'Completed' | 'On Hold';
+  budget: number;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  ownerId: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: 'Software' | 'Service' | 'Hardware' | 'Consulting';
+  price: number;
+  createdAt: string;
+  ownerId: string;
+}
+
 
 export interface ColumnConfig {
   id: string;

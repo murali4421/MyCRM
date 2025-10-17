@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, OpportunityStage } from '../models/crm.models';
+import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, OpportunityStage, Project, Product } from '../models/crm.models';
 
 const API_DELAY = 300; // ms
 
@@ -17,6 +17,8 @@ export class ApiService {
     users: signal<User[]>([]),
     roles: signal<Role[]>([]),
     emailTemplates: signal<EmailTemplate[]>([]),
+    projects: signal<Project[]>([]),
+    products: signal<Product[]>([]),
   };
 
   constructor() {
@@ -91,6 +93,23 @@ export class ApiService {
         { id: 'tpl-2', name: 'Follow-up', subject: 'Following up', body: 'Hi {{contact.name}},\n\nJust wanted to follow up on our last conversation.\n\nThanks,\n{{owner.name}}', createdAt: new Date('2023-05-15').toISOString() },
     ];
     this.db.emailTemplates.set(initialTemplates);
+
+    // PROJECTS
+    const initialProjects: Project[] = [
+      { id: 'proj-1', name: 'Website Redesign', companyId: 'comp-1', status: 'In Progress', budget: 25000, startDate: '2024-07-01', endDate: '2024-10-31', ownerId: 'user-2', description: 'Complete overhaul of the innovate.com website.', createdAt: new Date('2024-06-15').toISOString() },
+      { id: 'proj-2', name: 'Q3 Marketing Campaign', companyId: 'comp-2', status: 'Planning', budget: 40000, startDate: '2024-08-01', endDate: '2024-09-30', ownerId: 'user-2', description: 'Digital marketing campaign for new service launch.', createdAt: new Date('2024-06-20').toISOString() },
+      { id: 'proj-3', name: 'Logistics System Upgrade', companyId: 'comp-3', status: 'Completed', budget: 150000, startDate: '2024-01-10', endDate: '2024-06-10', ownerId: 'user-1', description: 'Upgrade of the core logistics and tracking system.', createdAt: new Date('2024-01-05').toISOString() },
+    ];
+    this.db.projects.set(initialProjects);
+
+    // PRODUCTS & SERVICES
+    const initialProducts: Product[] = [
+      { id: 'prod-1', name: 'CRM Pro License', description: 'Per-seat annual license for our flagship CRM software.', category: 'Software', price: 600, createdAt: new Date('2023-01-01').toISOString(), ownerId: 'user-1' },
+      { id: 'prod-2', name: 'Implementation Package', description: 'Onboarding and implementation service for new clients.', category: 'Service', price: 2500, createdAt: new Date('2023-01-01').toISOString(), ownerId: 'user-2' },
+      { id: 'prod-3', name: 'Advanced Analytics Module', description: 'Add-on module for advanced reporting and business intelligence.', category: 'Software', price: 450, createdAt: new Date('2023-03-01').toISOString(), ownerId: 'user-3' },
+      { id: 'prod-4', name: 'Strategic Consulting', description: 'Hourly consulting with a senior strategist.', category: 'Consulting', price: 300, createdAt: new Date('2023-02-01').toISOString(), ownerId: 'user-2' },
+    ];
+    this.db.products.set(initialProducts);
   }
 
   private request<T>(data: T): Promise<T> {
@@ -108,6 +127,8 @@ export class ApiService {
   getUsers = () => this.request(this.db.users());
   getRoles = () => this.request(this.db.roles());
   getEmailTemplates = () => this.request(this.db.emailTemplates());
+  getProjects = () => this.request(this.db.projects());
+  getProducts = () => this.request(this.db.products());
 
   // --- ADD ---
   addCompany = (company: Company) => { this.db.companies.update(c => [...c, company]); return this.request(company); };
@@ -117,6 +138,8 @@ export class ApiService {
   addActivity = (activity: Activity) => { this.db.activities.update(a => [...a, activity]); return this.request(activity); };
   addUser = (user: User) => { this.db.users.update(u => [...u, user]); return this.request(user); };
   addTemplate = (template: EmailTemplate) => { this.db.emailTemplates.update(t => [...t, template]); return this.request(template); };
+  addProject = (project: Project) => { this.db.projects.update(p => [...p, project]); return this.request(project); };
+  addProduct = (product: Product) => { this.db.products.update(p => [...p, product]); return this.request(product); };
 
   // --- UPDATE ---
   updateCompany = (updated: Company) => { this.db.companies.update(c => c.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
@@ -126,6 +149,8 @@ export class ApiService {
   updateActivity = (updated: Activity) => { this.db.activities.update(a => a.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
   updateUser = (updated: User) => { this.db.users.update(u => u.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
   updateTemplate = (updated: EmailTemplate) => { this.db.emailTemplates.update(t => t.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
+  updateProject = (updated: Project) => { this.db.projects.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
+  updateProduct = (updated: Product) => { this.db.products.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
 
   // --- DELETE ---
   deleteCompany = (id: string) => { this.db.companies.update(c => c.filter(x => x.id !== id)); return this.request({id}); };
@@ -134,4 +159,6 @@ export class ApiService {
   deleteTask = (id: string) => { this.db.tasks.update(t => t.filter(x => x.id !== id)); return this.request({id}); };
   deleteActivity = (id: string) => { this.db.activities.update(a => a.filter(x => x.id !== id)); return this.request({id}); };
   deleteTemplate = (id: string) => { this.db.emailTemplates.update(t => t.filter(x => x.id !== id)); return this.request({id}); };
+  deleteProject = (id: string) => { this.db.projects.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
+  deleteProduct = (id: string) => { this.db.products.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
 }
