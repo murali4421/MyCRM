@@ -404,8 +404,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const closeDate = new Date(opp.closeDate.replace(/-/g, '/'));
         const key = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
         if (key in dataByMonth) {
-            // FIX: The left-hand side of an arithmetic operation must be of type 'number'.
-            // `dataByMonth[key]` could be `undefined`, so we provide a fallback of `0` to ensure a safe operation.
+            // FIX: Provided a fallback of `0` to ensure the left-hand side of the arithmetic operation is a number, as `dataByMonth[key]` could be undefined.
             dataByMonth[key] = (dataByMonth[key] || 0) + opp.value;
         }
     });
@@ -443,9 +442,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
     const allUsers = this.dataService.users();
   
-    // FIX: A user might not be found for an ownerId, resulting in `undefined`.
-    // Spreading `undefined` is an error. We now check for the user's existence
-    // and filter out any null results to ensure type safety.
+    // FIX: Avoided spreading a potentially undefined 'user' object by checking for its existence and filtering out null results, ensuring type safety.
     return Object.entries(valueByOwner)
         .map(([ownerId, data]) => {
             const user = allUsers.find(u => u.id === ownerId);

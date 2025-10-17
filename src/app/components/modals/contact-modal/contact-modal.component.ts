@@ -127,18 +127,27 @@ export class ContactModalComponent {
   });
 
   constructor() {
-     effect(() => {
-        const selectedContact = this.uiService.selectedContact();
-        untracked(() => {
-            if (selectedContact) {
-                this.isNew = false;
-                this.contactModel.set({ ...selectedContact });
-            } else {
-                this.isNew = true;
-                this.contactModel.set({ ownerId: this.authService.currentUser()?.id });
-            }
-            this.aiSuggestion.set(null);
-        });
+    effect(() => {
+      const selectedContact = this.uiService.selectedContact();
+      untracked(() => {
+        // This logic ensures we differentiate between 'undefined' (closed), 'null' (new), and a Contact object (edit).
+        if (selectedContact === undefined) {
+          // Modal is closed, do nothing.
+          return;
+        }
+
+        if (selectedContact === null) {
+          // New contact mode
+          this.isNew = true;
+          this.contactModel.set({ ownerId: this.authService.currentUser()?.id });
+        } else {
+          // Edit contact mode
+          this.isNew = false;
+          this.contactModel.set({ ...selectedContact });
+        }
+        // Reset AI suggestion whenever the modal opens or its data changes.
+        this.aiSuggestion.set(null);
+      });
     });
   }
 
