@@ -405,7 +405,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const key = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
         if (key in dataByMonth) {
             // FIX: The left-hand side of an arithmetic operation must be of type 'number'.
-            // `dataByMonth[key]` can be `undefined`, so we provide a fallback of `0`.
+            // `dataByMonth[key]` could be `undefined`, so we provide a fallback of `0` to ensure a safe operation.
             dataByMonth[key] = (dataByMonth[key] || 0) + opp.value;
         }
     });

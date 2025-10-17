@@ -11,14 +11,14 @@
   "dependencies": {
     "rxjs": "^7.8.2",
     "@google/genai": "^1.13.0",
-    "@angular/platform-browser": "^20.1.0",
-    "@angular/core": "^20.1.0",
-    "@angular/compiler": "^20.1.0",
-    "@angular/common": "^20.1.0",
+    "@angular/platform-browser": "^20.3.0",
+    "@angular/core": "^20.3.0",
+    "@angular/compiler": "^20.3.0",
+    "@angular/common": "^20.3.0",
     "@angular/forms": "^20.3.5",
-    "@angular/build": "^20.1.0",
-    "@angular/cli": "^20.1.0",
-    "@angular/compiler-cli": "^20.1.0",
+    "@angular/build": "^20.3.0",
+    "@angular/cli": "^20.3.0",
+    "@angular/compiler-cli": "^20.3.0",
     "tailwindcss": "latest"
   },
   "devDependencies": {
