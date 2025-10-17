@@ -404,7 +404,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const closeDate = new Date(opp.closeDate.replace(/-/g, '/'));
         const key = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
         if (key in dataByMonth) {
-            // FIX: Provided a fallback of `0` to ensure the left-hand side of the arithmetic operation is a number, as `dataByMonth[key]` could be undefined.
+            // FIX: The left-hand side of an arithmetic operation must be a number. `dataByMonth[key]` could be `undefined` here according to TypeScript, so provide a fallback of 0.
             dataByMonth[key] = (dataByMonth[key] || 0) + opp.value;
         }
     });
@@ -442,7 +442,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
     const allUsers = this.dataService.users();
   
-    // FIX: Avoided spreading a potentially undefined 'user' object by checking for its existence and filtering out null results, ensuring type safety.
+    // FIX: The spread operator `...` can only be used on object types. `allUsers.find(...)` can return `undefined`, which is not an object. The fix is to check if a user was found, and if so, construct the new object by explicitly mapping properties instead of spreading the potentially undefined user object.
     return Object.entries(valueByOwner)
         .map(([ownerId, data]) => {
             const user = allUsers.find(u => u.id === ownerId);

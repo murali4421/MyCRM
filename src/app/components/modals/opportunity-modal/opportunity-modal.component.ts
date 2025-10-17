@@ -157,16 +157,23 @@ export class OpportunityModalComponent {
     effect(() => {
         const selectedOpportunity = this.uiService.selectedOpportunity();
         untracked(() => {
-            if (selectedOpportunity) {
-                this.isNew = false;
-                this.opportunityModel.set({ ...selectedOpportunity });
-            } else {
+            if (selectedOpportunity === undefined) {
+                // Modal is closed, do nothing.
+                return;
+            }
+
+            if (selectedOpportunity === null) {
+                // New opportunity mode
                 this.isNew = true;
                 this.opportunityModel.set({ 
                     ownerId: this.authService.currentUser()?.id,
                     stage: OpportunityStage.Prospecting,
                     closeDate: new Date().toISOString().split('T')[0]
                 });
+            } else {
+                // Edit opportunity mode
+                this.isNew = false;
+                this.opportunityModel.set({ ...selectedOpportunity });
             }
             this.aiSuggestion.set(null);
         });

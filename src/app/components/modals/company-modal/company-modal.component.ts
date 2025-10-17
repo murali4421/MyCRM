@@ -116,14 +116,21 @@ export class CompanyModalComponent {
     effect(() => {
         const selectedCompany = this.uiService.selectedCompany();
         untracked(() => {
-            if (selectedCompany) {
-                this.isNew = false;
-                this.companyModel.set({ ...selectedCompany });
-                this.logoUrl.set(selectedCompany.logoUrl);
-            } else {
+            if (selectedCompany === undefined) {
+                // Modal is closed, do nothing.
+                return;
+            }
+
+            if (selectedCompany === null) {
+                // New company mode
                 this.isNew = true;
                 this.companyModel.set({});
                 this.logoUrl.set('');
+            } else {
+                // Edit company mode
+                this.isNew = false;
+                this.companyModel.set({ ...selectedCompany });
+                this.logoUrl.set(selectedCompany.logoUrl);
             }
         });
     });
