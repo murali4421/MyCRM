@@ -1,5 +1,5 @@
 export type AppView = 'dashboard' | 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'users-roles' | 'email-templates' | 'audit-log' | 'projects' | 'products' | 'sa_dashboard' | 'sa_plans';
-export type AuthView = 'login' | 'signup' | 'forgotPassword' | 'resetPassword';
+export type AuthView = 'login' | 'signup';
 export type ProfileView = 'personal-info' | 'password' | 'notifications';
 export type UsersAndRolesView = 'users' | 'roles' | 'team';
 export type SuperAdminView = 'dashboard' | 'plans';

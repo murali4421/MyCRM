@@ -55,7 +55,7 @@ export class GeminiService {
     if (!this.ai || !textToSummarize) return null;
     this.isGeneratingSummary.set(true);
     try {
-      const prompt = `You are a helpful CRM assistant. From the following text, extract a concise summary and generate a short, descriptive subject line.
+      const prompt = `You are a helpful Cortex CRM assistant. From the following text, extract a concise summary and generate a short, descriptive subject line.
         Respond in JSON format with "subject" and "description" keys. Text: "${textToSummarize}"`;
 
       const response = await this.ai.models.generateContent({
@@ -92,7 +92,7 @@ export class GeminiService {
         .join('\n');
 
       const prompt = `
-        As a CRM sales assistant, analyze the following opportunity and its recent activity to suggest the single best next action.
+        As a Cortex CRM sales assistant, analyze the following opportunity and its recent activity to suggest the single best next action.
         The action should be concise, actionable, and specific.
 
         Opportunity Details:
@@ -131,7 +131,7 @@ export class GeminiService {
         .join('\n');
 
       const prompt = `
-        As a CRM sales assistant, analyze the following contact and their recent activity to suggest the single best next action.
+        As a Cortex CRM sales assistant, analyze the following contact and their recent activity to suggest the single best next action.
         The goal is to build the relationship, create a new sales opportunity, or re-engage them.
         The action should be concise, actionable, and specific.
 
@@ -164,7 +164,7 @@ export class GeminiService {
     this.isGeneratingLeadScore.set(true);
     try {
       const prompt = `
-        As a CRM sales assistant, analyze the following contact details and classify them as a 'Hot', 'Warm', or 'Cold' lead.
+        As a Cortex CRM sales assistant, analyze the following contact details and classify them as a 'Hot', 'Warm', or 'Cold' lead.
         - A 'Hot' lead is typically a decision-maker (e.g., Director, VP, C-level) in a relevant industry.
         - A 'Warm' lead is a manager or senior individual who seems influential.
         - A 'Cold' lead is a junior-level contact or someone in a less relevant role.

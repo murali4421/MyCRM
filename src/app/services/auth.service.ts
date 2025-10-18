@@ -245,16 +245,6 @@ export class AuthService {
     this.loginAs.set('crm');
   }
   
-  requestPasswordReset(form: NgForm) {
-    alert(`Password reset link sent to ${form.value.email}`);
-    this.uiService.authView.set('login');
-  }
-
-  resetPassword(form: NgForm) {
-    alert(`Password has been reset.`);
-    this.uiService.authView.set('login');
-  }
-  
   updatePasswordStrength(password: string) {
     let strength = 0;
     if (password.length >= 8) strength++;

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Contact, Activity } from '../../../models/crm.models';
+import { Contact, Activity, OpportunityStage } from '../../../models/crm.models';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { AuthService } from '../../../services/auth.service';
@@ -23,6 +23,15 @@ import { GeminiService } from '../../../services/gemini.service';
             >
               {{ contactModel().leadScore }} Lead
             </span>
+             <button type="button" (click)="generateAndSaveLeadScore(contactModel()!)" [disabled]="geminiService.isGeneratingLeadScore()" class="p-1 rounded-full hover:bg-gray-700 disabled:opacity-50" title="Refresh lead score">
+                @if(geminiService.isGeneratingLeadScore() && isRescoring()) {
+                    <div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                }
+            </button>
           }
         </div>
         <button (click)="uiService.closeContactModal()" class="p-2 rounded-full hover:bg-gray-700">
@@ -117,6 +126,7 @@ export class ContactModalComponent {
   geminiService = inject(GeminiService);
 
   isNew = false;
+  isRescoring = signal(false);
   contactModel = signal<Partial<Contact>>({});
   aiSuggestion = signal<string | null>(null);
 
@@ -147,6 +157,7 @@ export class ContactModalComponent {
         }
         // Reset AI suggestion whenever the modal opens or its data changes.
         this.aiSuggestion.set(null);
+        this.isRescoring.set(false);
       });
     });
   }
@@ -174,27 +185,53 @@ export class ContactModalComponent {
       };
       await this.dataService.addContact(newContact);
       savedContact = newContact;
+      // Generate score in the background for new contacts
+      this.generateAndSaveLeadScore(savedContact);
     } else {
       await this.dataService.updateContact(formData as Contact);
       savedContact = formData as Contact;
     }
     this.uiService.closeContactModal();
-
-    // Generate score in the background
-    this.generateAndSaveLeadScore(savedContact);
   }
 
-  async generateAndSaveLeadScore(contact: Contact) {
+  async generateAndSaveLeadScore(contact: Partial<Contact>) {
+    if (!contact || !contact.id) return;
+    this.isRescoring.set(true);
     const company = this.dataService.getCompanyById(contact.companyId);
-    const score = await this.geminiService.generateLeadScore(contact, company);
+    const score = await this.geminiService.generateLeadScore(contact as Contact, company);
     if (score) {
-      await this.dataService.updateContact({ ...contact, leadScore: score });
+      await this.dataService.updateContact({ ...contact, leadScore: score } as Contact);
     }
+    this.isRescoring.set(false);
   }
   
   async deleteContact() {
-    if(this.contactModel()?.id && confirm('Are you sure you want to delete this contact?')) {
-        await this.dataService.deleteContact(this.contactModel().id!);
+    const contactId = this.contactModel()?.id;
+    if (!contactId) return;
+
+    // Check for associated records
+    const associatedTasks = this.dataService.tasks().filter(t => t.relatedEntity?.type === 'contact' && t.relatedEntity.id === contactId);
+    const associatedActivities = this.dataService.activities().filter(a => (a.relatedEntity?.type === 'contact' && a.relatedEntity.id === contactId) || a.participants?.includes(contactId));
+    const associatedOpportunities = this.dataService.opportunities().filter(o => o.stage !== OpportunityStage.ClosedWon && o.stage !== OpportunityStage.ClosedLost).filter(o => {
+        const companyContacts = this.dataService.contacts().filter(c => c.companyId === o.companyId);
+        return companyContacts.some(c => c.id === contactId);
+    });
+
+    const hasAssociations = associatedTasks.length > 0 || associatedActivities.length > 0 || associatedOpportunities.length > 0;
+
+    if (hasAssociations) {
+      let message = `This contact cannot be deleted because it is associated with:\n`;
+      if (associatedTasks.length > 0) message += `\n- ${associatedTasks.length} task(s)`;
+      if (associatedActivities.length > 0) message += `\n- ${associatedActivities.length} activity(ies)`;
+      if (associatedOpportunities.length > 0) message += `\n- ${associatedOpportunities.length} open opportunity(ies)`;
+      message += `\n\nPlease reassign or remove these associations first.`;
+      
+      alert(message);
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this contact? This action cannot be undone.')) {
+        await this.dataService.deleteContact(contactId);
         this.uiService.closeContactModal();
     }
   }

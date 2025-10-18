@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { UiService } from '../../services/ui.service';
 import { AppView } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
+import { LogoComponent } from '../../components/shared/logo/logo.component';
 
+// FIX: Added NavItem interface to define the structure for navigation items.
 interface NavItem {
   view: AppView;
   label: string;
@@ -12,7 +14,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule],
+  imports: [CommonModule, LogoComponent],
   template: `
     <!-- Mobile sidebar -->
     @if (uiService.isSidebarOpen()) {
@@ -28,8 +30,8 @@ interface NavItem {
           </div>
           <div class="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div class="flex-shrink-0 flex items-center px-4 space-x-3">
-              <div class="w-8 h-8 rounded-lg bg-indigo-600"></div>
-              <h1 class="text-xl font-bold text-white">CRM Pro</h1>
+              <app-logo sizeClass="w-8 h-8"></app-logo>
+              <h1 class="text-xl font-bold text-white">Cortex CRM</h1>
             </div>
             <nav class="mt-5 px-2 space-y-1">
               @for (item of visibleNavItems(); track item.view) {
@@ -56,8 +58,8 @@ interface NavItem {
       <div class="flex flex-col w-64">
         <div class="flex flex-col h-0 flex-1">
           <div class="flex items-center h-16 flex-shrink-0 px-4 bg-gray-950 space-x-3">
-            <div class="w-8 h-8 rounded-lg bg-indigo-600"></div>
-            <h1 class="text-xl font-bold text-white">CRM Pro</h1>
+            <app-logo sizeClass="w-8 h-8"></app-logo>
+            <h1 class="text-xl font-bold text-white">Cortex CRM</h1>
           </div>
           <div class="flex-1 flex flex-col overflow-y-auto bg-gray-900">
             <nav class="flex-1 px-2 py-4 space-y-1">

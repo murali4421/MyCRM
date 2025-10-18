@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { UiService } from '../../../services/ui.service';
 import { DataService } from '../../../services/data.service';
 import { Contact, Company, Opportunity, OpportunityStage, Task, ImportableEntity } from '../../../models/crm.models';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-import-modal',
@@ -39,7 +40,7 @@ import { Contact, Company, Opportunity, OpportunityStage, Task, ImportableEntity
           }
           @if(uiService.importStep() === 'map') {
             <div>
-                <p class="text-gray-300 mb-4">Map the columns from your CSV to the fields in the CRM.</p>
+                <p class="text-gray-300 mb-4">Map the columns from your CSV to the fields in Cortex CRM.</p>
                 <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
                     @for(header of uiService.csvHeaders(); track header) {
                         <div class="grid grid-cols-2 gap-4 items-center">
@@ -68,11 +69,12 @@ import { Contact, Company, Opportunity, OpportunityStage, Task, ImportableEntity
 export class ImportModalComponent {
   uiService = inject(UiService);
   dataService = inject(DataService);
+  authService = inject(AuthService);
 
   targetFields = computed(() => {
     switch (this.uiService.importTarget()) {
       case 'companies': return ['name', 'industry', 'website'];
-      case 'contacts': return ['name', 'email', 'phone'];
+      case 'contacts': return ['name', 'email', 'phone', 'companyName'];
       case 'opportunities': return ['name', 'value', 'closeDate'];
       case 'tasks': return ['title', 'dueDate'];
       default: return [];
@@ -83,7 +85,7 @@ export class ImportModalComponent {
     const mappings = this.uiService.fieldMappings();
     const requiredFields: {[key:string]: string[]} = {
       companies: ['name'],
-      contacts: ['name', 'email'],
+      contacts: ['name', 'email', 'companyName'],
       opportunities: ['name', 'value'],
       tasks: ['title']
     };
@@ -141,37 +143,92 @@ export class ImportModalComponent {
     }
 
     const importPromises: Promise<any>[] = [];
+    const errors: string[] = [];
+    const currentUser = this.authService.currentUser();
     const defaultPlan = this.dataService.servicePlans().find(p => p.isDefault);
+    const target = this.uiService.importTarget();
 
+    if (!currentUser) {
+        alert('Cannot import: user not logged in.');
+        return;
+    }
     if (!defaultPlan) {
         alert('Cannot import: No default plan is set.');
         return;
     }
 
-    this.uiService.csvData().forEach(row => {
-      const target = this.uiService.importTarget();
-      if (target === 'companies') {
-          const nameHeader = invertedMappings.name;
-          const industryHeader = invertedMappings.industry;
-          const websiteHeader = invertedMappings.website;
-          
-          if (!nameHeader) return;
+    this.uiService.csvData().forEach((row, index) => {
+      switch (target) {
+        case 'companies': {
+            const nameHeader = invertedMappings.name;
+            const industryHeader = invertedMappings.industry;
+            const websiteHeader = invertedMappings.website;
+            
+            if (!nameHeader || !row[nameHeader]) {
+                errors.push(`Row ${index + 2}: Missing company name. Skipping.`);
+                return;
+            }
 
-          const newCompany: Company = {
-            id: `comp-${Date.now()}-${Math.random()}`,
-            name: row[nameHeader] || '',
-            industry: industryHeader ? row[industryHeader] || '' : '',
-            website: websiteHeader ? row[websiteHeader] || '' : '',
-            createdAt: new Date().toISOString(),
-            planId: defaultPlan.id,
-          };
-          importPromises.push(this.dataService.addCompany(newCompany));
+            const newCompany: Company = {
+                id: `comp-${Date.now()}-${index}`,
+                name: row[nameHeader],
+                industry: industryHeader ? row[industryHeader] : '',
+                website: websiteHeader ? row[websiteHeader] : '',
+                createdAt: new Date().toISOString(),
+                planId: defaultPlan.id,
+            };
+            importPromises.push(this.dataService.addCompany(newCompany));
+            break;
+        }
+        case 'contacts': {
+            const nameHeader = invertedMappings.name;
+            const emailHeader = invertedMappings.email;
+            const phoneHeader = invertedMappings.phone;
+            const companyNameHeader = invertedMappings.companyName;
+
+            if (!nameHeader || !row[nameHeader] || !emailHeader || !row[emailHeader] || !companyNameHeader || !row[companyNameHeader]) {
+                errors.push(`Row ${index + 2}: Missing required data (name, email, or companyName). Skipping.`);
+                return;
+            }
+            
+            const companyName = row[companyNameHeader];
+            const company = this.dataService.companies().find(c => c.name.toLowerCase() === companyName.toLowerCase());
+
+            if (!company) {
+                errors.push(`Row ${index + 2}: Company "${companyName}" not found. Skipping.`);
+                return;
+            }
+
+            const newContact: Contact = {
+                id: `cont-${Date.now()}-${index}`,
+                name: row[nameHeader],
+                email: row[emailHeader],
+                phone: phoneHeader ? row[phoneHeader] : '',
+                companyId: company.id,
+                ownerId: currentUser.id, // Default to current user
+                createdAt: new Date().toISOString()
+            };
+            importPromises.push(this.dataService.addContact(newContact));
+            break;
+        }
+        // TODO: Implement other import types
       }
-      // Implement for other types as needed
     });
     
     await Promise.all(importPromises);
-    alert(`Successfully imported ${this.uiService.csvData().length} records.`);
-    this.uiService.closeImportModal();
+    
+    const successCount = importPromises.length;
+    let message = `Successfully imported ${successCount} record(s).`;
+    if (errors.length > 0) {
+      message += `\n\nCould not import ${errors.length} record(s):\n${errors.slice(0, 5).join('\n')}`;
+       if (errors.length > 5) {
+        message += `\n...and ${errors.length - 5} more errors.`;
+      }
+    }
+    alert(message);
+
+    if (successCount > 0) {
+        this.uiService.closeImportModal();
+    }
   }
 }

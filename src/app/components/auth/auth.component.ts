@@ -3,17 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { UiService } from '../../services/ui.service';
+import { LogoComponent } from '../shared/logo/logo.component';
 
 @Component({
   selector: 'app-auth',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LogoComponent],
   template: `
     <div class="flex items-center justify-center min-h-screen p-4">
       <div class="w-full max-w-md">
         <div class="flex justify-center mb-8">
             <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-indigo-600"></div>
-              <h1 class="text-3xl font-bold text-gray-100">CRM Pro</h1>
+              <app-logo sizeClass="w-10 h-10"></app-logo>
+              <h1 class="text-3xl font-bold text-gray-100">Cortex CRM</h1>
             </div>
         </div>
 
@@ -44,9 +45,6 @@ import { UiService } from '../../services/ui.service';
                         @if (password.errors?.['required']) { <p>Password is required.</p> }
                       </div>
                     }
-                </div>
-                <div class="flex items-center justify-between mb-6">
-                  <a href="#" (click)="$event.preventDefault(); uiService.authView.set('forgotPassword')" class="text-sm text-indigo-400 hover:underline">Forgot Password?</a>
                 </div>
                 <button type="submit" [disabled]="!loginForm.valid" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-600">
                   Sign in
@@ -150,74 +148,6 @@ import { UiService } from '../../services/ui.service';
                   Log in
                 </a>
               </p>
-            </div>
-          }
-          @case ('forgotPassword') {
-            <div class="bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700">
-              <h2 class="text-2xl font-bold text-center text-gray-100 mb-2">Forgot Password</h2>
-              <p class="text-center text-gray-400 mb-6 text-sm">Enter your email and we'll send you a link to reset your password.</p>
-              <form #forgotPasswordForm="ngForm" (ngSubmit)="authService.requestPasswordReset(forgotPasswordForm)">
-                <div class="mb-6">
-                  <label for="email" class="block text-sm font-medium text-gray-300">Email Address</label>
-                  <input type="email" name="email" ngModel required email #email="ngModel"
-                    [class.border-red-500]="email.invalid && email.touched"
-                    class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                  @if (email.invalid && email.touched) {
-                    <div class="text-red-500 text-xs mt-1">
-                      @if (email.errors?.['required']) { <p>Email is required.</p> }
-                      @if (email.errors?.['email']) { <p>Please enter a valid email address.</p> }
-                    </div>
-                  }
-                </div>
-                <button type="submit" [disabled]="!forgotPasswordForm.valid" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-600">
-                  Send Reset Link
-                </button>
-              </form>
-              <p class="mt-6 text-center text-sm text-gray-400">
-                <a href="#" (click)="$event.preventDefault(); uiService.authView.set('login')" class="font-medium text-indigo-400 hover:underline">
-                  Back to login
-                </a>
-              </p>
-            </div>
-          }
-           @case ('resetPassword') {
-            <div class="bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700">
-              <h2 class="text-2xl font-bold text-center text-gray-100 mb-6">Reset Your Password</h2>
-               <form #resetPasswordForm="ngForm" (ngSubmit)="authService.resetPassword(resetPasswordForm)">
-                <div class="mb-4">
-                  <label for="password" class="block text-sm font-medium text-gray-300">New Password</label>
-                  <input type="password" name="password" ngModel required minlength="8" #password="ngModel"
-                    [class.border-red-500]="password.invalid && password.touched"
-                    class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                   @if (password.invalid && password.touched) {
-                      <div class="text-red-500 text-xs mt-1">
-                        @if (password.errors?.['required']) { <p>New password is required.</p> }
-                        @if (password.errors?.['minlength']) { <p>Password must be at least 8 characters long.</p> }
-                      </div>
-                    }
-                </div>
-                <div class="mb-6">
-                  <label for="confirmPassword" class="block text-sm font-medium text-gray-300">Confirm New Password</label>
-                  <input type="password" name="confirmPassword" ngModel required #confirmPassword="ngModel"
-                    [class.border-red-500]="confirmPassword.touched && (confirmPassword.invalid || password.value !== confirmPassword.value)"
-                    class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                  @if (confirmPassword.touched) {
-                    <div class="text-red-500 text-xs mt-1">
-                      @if (confirmPassword.errors?.['required']) {
-                        <p>Confirming your password is required.</p>
-                      } @else if (password.value !== confirmPassword.value) {
-                        <p>Passwords do not match.</p>
-                      }
-                    </div>
-                  }
-                </div>
-                <button type="submit" [disabled]="!resetPasswordForm.valid || (password.value !== confirmPassword.value)" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-600">
-                  Set New Password
-                </button>
-                 @if(authService.authError()) {
-                  <p class="text-red-500 text-sm mt-4 text-center">{{ authService.authError() }}</p>
-                }
-              </form>
             </div>
           }
         }

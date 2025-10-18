@@ -5,7 +5,7 @@ import {
 } from '../models/crm.models';
 
 type ColumnCustomizableTableName = 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'projects';
-type PaginatedTableName = ColumnCustomizableTableName | 'audit-log' | 'email-templates' | 'users' | 'team-contacts' | 'products';
+type PaginatedTableName = ColumnCustomizableTableName | 'audit-log' | 'email-templates' | 'users' | 'team-contacts' | 'products' | 'team-opportunities' | 'team-tasks';
 type TableColumnConfigs = Record<ColumnCustomizableTableName, ColumnConfig[]>;
 
 export interface ContactPopoverData {

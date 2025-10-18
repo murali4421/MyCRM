@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './app/services/auth.service';
 import { UiService } from './app/services/ui.service';
@@ -41,6 +41,8 @@ import { ContactPopoverComponent } from './app/components/shared/contact-popover
 import { ProjectModalComponent } from './app/components/modals/project-modal/project-modal.component';
 import { ProductModalComponent } from './app/components/modals/product-modal/product-modal.component';
 import { SuperAdminComponent } from './app/components/super-admin/super-admin.component';
+import { PlanEditorComponent } from './app/components/super-admin/plan-editor.component';
+import { UpgradePlanModalComponent } from './app/components/modals/upgrade-plan-modal/upgrade-plan-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -48,7 +50,7 @@ import { SuperAdminComponent } from './app/components/super-admin/super-admin.co
     @if (dataService.isLoading()) {
       <div class="flex items-center justify-center h-screen bg-gray-900">
         <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-indigo-500"></div>
-        <span class="ml-4 text-lg text-gray-300">Loading CRM...</span>
+        <span class="ml-4 text-lg text-gray-300">Loading Cortex CRM...</span>
       </div>
     } @else {
       @if (authService.currentUser()) {
@@ -71,18 +73,33 @@ import { SuperAdminComponent } from './app/components/super-admin/super-admin.co
                         </button>
                     </div>
                   } @else {
-                    @switch (uiService.view()) {
-                      @case ('dashboard') { <app-dashboard /> }
-                      @case ('companies') { <app-companies /> }
-                      @case ('contacts') { <app-contacts /> }
-                      @case ('opportunities') { <app-opportunities /> }
-                      @case ('projects') { <app-projects /> }
-                      @case ('products') { <app-products /> }
-                      @case ('tasks') { <app-tasks /> }
-                      @case ('activities') { <app-activities /> }
-                      @case ('users-roles') { <app-users-roles /> }
-                      @case ('email-templates') { <app-email-templates /> }
-                      @case ('audit-log') { <app-audit-log /> }
+                    @if (isCurrentViewAllowed()) {
+                        @switch (uiService.view()) {
+                          @case ('dashboard') { <app-dashboard /> }
+                          @case ('companies') { <app-companies /> }
+                          @case ('contacts') { <app-contacts /> }
+                          @case ('opportunities') { <app-opportunities /> }
+                          @case ('projects') { <app-projects /> }
+                          @case ('products') { <app-products /> }
+                          @case ('tasks') { <app-tasks /> }
+                          @case ('activities') { <app-activities /> }
+                          @case ('users-roles') { <app-users-roles /> }
+                          @case ('email-templates') { <app-email-templates /> }
+                          @case ('audit-log') { <app-audit-log /> }
+                        }
+                    } @else {
+                       <div class="bg-gray-800 rounded-lg p-8 text-center border border-indigo-500/30">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                                </svg>
+                            </div>
+                            <h2 class="mt-4 text-2xl font-bold text-gray-100">Upgrade to Unlock This Feature</h2>
+                            <p class="mt-2 text-gray-400">This feature is not included in your current plan. Please upgrade your plan to access it.</p>
+                            <button (click)="uiService.changeView('dashboard')" class="mt-6 bg-indigo-600 text-white px-5 py-2.5 rounded-md hover:bg-indigo-700 text-sm font-medium">
+                                View Plans
+                            </button>
+                        </div>
                     }
                   }
                 </main>
@@ -105,6 +122,7 @@ import { SuperAdminComponent } from './app/components/super-admin/super-admin.co
             @if (uiService.emailComposerData().to) { <app-email-composer-modal /> }
             @if (uiService.isImportModalOpen()) { <app-import-modal /> }
             @if (uiService.activeColumnCustomization()) { <app-column-customization /> }
+            @if (uiService.isUpgradeModalOpen().open) { <app-upgrade-plan-modal /> }
 
             <!-- Contact Popover -->
             <app-contact-popover />
@@ -150,6 +168,8 @@ import { SuperAdminComponent } from './app/components/super-admin/super-admin.co
     ProjectModalComponent,
     ProductModalComponent,
     SuperAdminComponent,
+    PlanEditorComponent,
+    UpgradePlanModalComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -157,4 +177,8 @@ export class AppComponent {
   authService = inject(AuthService);
   uiService = inject(UiService);
   dataService = inject(DataService);
+
+  isCurrentViewAllowed = computed(() => {
+    return this.authService.isViewAllowed(this.uiService.view());
+  });
 }

@@ -303,4 +303,24 @@ export class DataService {
     const newOwner = this.getUserById(newOwnerId);
     if(contact && newOwner) this.log('reassign_contact', `Reassigned contact '${contact.name}' to ${newOwner.name}`, {type: 'contact', id: contact.id});
   }
+
+  async reassignOpportunityOwner(opportunityId: string, newOwnerId: string) {
+    const opportunity = this.opportunities().find(o => o.id === opportunityId);
+    if (!opportunity) return;
+    const updatedOpportunity = { ...opportunity, ownerId: newOwnerId };
+    await this.apiService.updateOpportunity(updatedOpportunity);
+    this.opportunities.update(opportunities => opportunities.map(o => o.id === opportunityId ? updatedOpportunity : o));
+    const newOwner = this.getUserById(newOwnerId);
+    if(opportunity && newOwner) this.log('reassign_opportunity', `Reassigned opportunity '${opportunity.name}' to ${newOwner.name}`, {type: 'opportunity', id: opportunity.id});
+  }
+
+  async reassignTaskOwner(taskId: string, newOwnerId: string) {
+    const task = this.tasks().find(t => t.id === taskId);
+    if (!task) return;
+    const updatedTask = { ...task, ownerId: newOwnerId };
+    await this.apiService.updateTask(updatedTask);
+    this.tasks.update(tasks => tasks.map(t => t.id === taskId ? updatedTask : t));
+    const newOwner = this.getUserById(newOwnerId);
+    if(task && newOwner) this.log('reassign_task', `Reassigned task '${task.title}' to ${newOwner.name}`, {type: 'task', id: task.id});
+  }
 }

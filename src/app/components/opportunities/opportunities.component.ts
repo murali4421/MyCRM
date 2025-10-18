@@ -14,6 +14,12 @@ import { AuthService } from '../../services/auth.service';
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
           <h1 class="text-3xl font-bold text-gray-100">Opportunities</h1>
           <div class="flex flex-wrap items-center gap-2">
+             <input 
+              type="text" 
+              placeholder="Search opportunities..." 
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)"
+              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
             <button (click)="uiService.openImportModal('opportunities')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
             <div class="flex flex-col items-end">
               <button 
@@ -101,6 +107,7 @@ export class OpportunitiesComponent {
   uiService = inject(UiService);
   authService = inject(AuthService);
 
+  searchTerm = signal('');
   draggedOpportunityId = signal<string | null>(null);
   dragOverStage = signal<OpportunityStage | null>(null);
   opportunityStages = Object.values(OpportunityStage);
@@ -134,8 +141,13 @@ export class OpportunitiesComponent {
 
   visibleOpportunities = computed(() => this.dataService.opportunities().filter(o => this.getVisibleUserIds().includes(o.ownerId)));
   
+  filteredOpportunities = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    return this.visibleOpportunities().filter(opp => opp.name.toLowerCase().includes(term));
+  });
+  
   opportunitiesByStage = computed(() => {
-    return this.visibleOpportunities().reduce<{[key in OpportunityStage]?: Opportunity[]}>((acc, opp) => {
+    return this.filteredOpportunities().reduce<{[key in OpportunityStage]?: Opportunity[]}>((acc, opp) => {
       if (!acc[opp.stage]) {
         acc[opp.stage] = [];
       }
