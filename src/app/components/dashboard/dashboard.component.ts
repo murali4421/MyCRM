@@ -257,14 +257,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   visibleActivities = computed(() => this.dataService.activities().filter(a => this.getVisibleUserIds().includes(a.ownerId)));
 
   // --- COMPUTED SIGNALS FOR DASHBOARD ---
-  // FIX: Strengthened the generic constraint to ensure type safety for date-based filtering, which may resolve the arithmetic error by preventing incorrect type inference.
+  // FIX: This generic function now correctly handles entities with different date properties (`createdAt` vs. `startTime`).
   private getDashboardFilteredData<T extends { ownerId: string; createdAt?: string; startTime?: string }>(dataSet: T[]): T[] {
     const now = new Date();
     const dateFilter = this.dashboardDateFilter();
     let startDate: Date | null = null;
     if (dateFilter !== 'all') {
       const days = parseInt(dateFilter.replace('d', ''), 10);
-      startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
     }
     
     let filtered = dataSet;
@@ -346,8 +346,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return acc;
     }, {});
 
-    // FIX: Cast Object.values to OpportunityStage[] to ensure type safety, which resolves the spread operator error by allowing correct type inference for `d`.
-    const allStages = Object.values(OpportunityStage) as OpportunityStage[];
+    // FIX: Using Object.values with an unsafe cast can cause type inference issues.
+    // By explicitly listing the enum members, we ensure `allStages` is correctly typed as `OpportunityStage[]`.
+    const allStages: OpportunityStage[] = [
+      OpportunityStage.Prospecting,
+      OpportunityStage.Qualification,
+      OpportunityStage.Proposal,
+      OpportunityStage.Negotiation,
+      OpportunityStage.ClosedWon,
+      OpportunityStage.ClosedLost
+    ];
     
     const dataWithValues = allStages
       .map(stage => ({

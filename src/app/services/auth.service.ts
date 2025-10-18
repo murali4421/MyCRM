@@ -13,15 +13,7 @@ export class AuthService {
 
   // In a real app, this would be null until a user logs in.
   // We'll mock a logged-in user for demonstration.
-  currentUser = signal<User | null>({
-    id: 'user-1',
-    name: 'Alex Johnson',
-    email: 'alex.j@example.com',
-    roleId: 'role-1', // Admin
-    status: 'Active',
-    profilePictureUrl: 'https://i.pravatar.cc/150?u=user-1',
-    jobTitle: 'Sales Director'
-  });
+  currentUser = signal<User | null>(null);
 
   isAuthenticated = computed(() => !!this.currentUser());
   authError = signal<string | null>(null);
