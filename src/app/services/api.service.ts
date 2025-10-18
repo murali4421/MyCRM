@@ -79,88 +79,17 @@ export class ApiService {
     ];
     this.db.servicePlans.set(initialServicePlans);
 
-    // COMPANIES
-    const expiredDate = new Date();
-    expiredDate.setDate(expiredDate.getDate() - 1); // Yesterday
-
-    const initialCompanies: Company[] = [
-      { id: 'comp-1', name: 'Innovate Inc.', industry: 'Technology', website: 'https://innovate.com', createdAt: new Date('2023-01-15').toISOString(), logoUrl: 'https://logo.clearbit.com/innovate.com', planId: 'plan-business', expiryDate: null },
-      { id: 'comp-2', name: 'Apex Solutions', industry: 'Consulting', website: 'https://apex.com', createdAt: new Date('2023-02-20').toISOString(), logoUrl: 'https://logo.clearbit.com/apex.com', planId: 'plan-startup', expiryDate: null },
-      { id: 'comp-3', name: 'Quantum Logistics', industry: 'Shipping', website: 'https://quantumlog.com', createdAt: new Date('2023-03-10').toISOString(), logoUrl: 'https://logo.clearbit.com/quantum.com', planId: 'plan-startup', expiryDate: null },
-      { id: 'comp-4', name: 'Healthful Goods', industry: 'Retail', website: 'https://healthfulgoods.com', createdAt: new Date('2023-04-05').toISOString(), logoUrl: 'https://logo.clearbit.com/healthfulgoods.com', planId: 'plan-free', expiryDate: null },
-      { id: 'comp-5', name: 'Expired Ventures', industry: 'Defunct', website: 'https://expired.com', createdAt: new Date('2024-01-01').toISOString(), logoUrl: 'https://logo.clearbit.com/expired.com', planId: 'plan-free', expiryDate: expiredDate.toISOString() }
-    ];
-    this.db.companies.set(initialCompanies);
-
-    // USERS
-    const initialUsers: User[] = [
-      { id: 'user-1', name: 'Admin User', email: 'admin@crm.com', roleId: 'role-1', companyId: 'comp-1', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=admin@crm.com', jobTitle: 'System Admin' },
-      { id: 'user-2', name: 'Maria Garcia', email: 'maria.g@example.com', roleId: 'role-2', companyId: 'comp-1', managerId: 'user-1', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-2', jobTitle: 'Sales Manager' },
-      { id: 'user-3', name: 'David Smith', email: 'david.s@example.com', roleId: 'role-3', companyId: 'comp-1', managerId: 'user-2', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-3', jobTitle: 'Sales Representative' },
-      { id: 'user-4', name: 'Jennifer Lee', email: 'jen.lee@example.com', roleId: 'role-3', companyId: 'comp-2', managerId: 'user-2', status: 'Invited', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-4', jobTitle: 'Sales Representative' },
-      { id: 'user-5', name: 'Expired User', email: 'expired@crm.com', roleId: 'role-3', companyId: 'comp-5', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=expired@crm.com', jobTitle: 'Former Employee' },
-    ];
-    this.db.users.set(initialUsers);
-
-    // CONTACTS
-    const initialContacts: Contact[] = [
-      { id: 'cont-1', name: 'Sarah Chen', email: 'sarah.chen@innovate.com', phone: '555-0101', companyId: 'comp-1', ownerId: 'user-3', createdAt: new Date('2023-01-16').toISOString(), leadScore: 'Warm' },
-      { id: 'cont-2', name: 'Tom Riley', email: 'tom.riley@apex.com', phone: '555-0102', companyId: 'comp-2', ownerId: 'user-3', createdAt: new Date('2023-02-21').toISOString(), leadScore: 'Hot' },
-      { id: 'cont-3', name: 'Linda Kim', email: 'linda.kim@quantumlog.com', phone: '555-0103', companyId: 'comp-3', ownerId: 'user-4', createdAt: new Date('2023-03-11').toISOString(), leadScore: 'Cold' },
-      { id: 'cont-4', name: 'Mike Brown', email: 'mike.brown@innovate.com', phone: '555-0104', companyId: 'comp-1', ownerId: 'user-2', createdAt: new Date('2023-04-01').toISOString(), leadScore: 'Warm' },
-    ];
-    this.db.contacts.set(initialContacts);
-
-    // OPPORTUNITIES
-    const initialOpps: Opportunity[] = [
-        { id: 'opp-1', name: 'Innovate Software Upgrade', companyId: 'comp-1', stage: OpportunityStage.Proposal, value: 50000, closeDate: '2024-08-30', ownerId: 'user-3', createdAt: new Date().toISOString() },
-        { id: 'opp-2', name: 'Apex Consulting Retainer', companyId: 'comp-2', stage: OpportunityStage.Qualification, value: 75000, closeDate: '2024-09-15', ownerId: 'user-3', createdAt: new Date().toISOString() },
-        { id: 'opp-3', name: 'Quantum Shipping Contract', companyId: 'comp-3', stage: OpportunityStage.Negotiation, value: 120000, closeDate: '2024-07-25', ownerId: 'user-4', createdAt: new Date().toISOString() },
-        { id: 'opp-4', name: 'Innovate Cloud Migration', companyId: 'comp-1', stage: OpportunityStage.ClosedWon, value: 80000, closeDate: '2024-05-20', ownerId: 'user-2', createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString() },
-        { id: 'opp-5', name: 'Apex Security Audit', companyId: 'comp-2', stage: OpportunityStage.ClosedLost, value: 30000, closeDate: '2024-06-01', ownerId: 'user-3', createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() },
-    ];
-    this.db.opportunities.set(initialOpps);
-    
-    // TASKS
-    const today = new Date().toISOString().split('T')[0];
-    const initialTasks: Task[] = [
-        { id: 'task-1', title: 'Follow up with Sarah Chen', dueDate: today, ownerId: 'user-3', completed: false, createdAt: new Date().toISOString(), relatedEntity: { type: 'contact', id: 'cont-1'} },
-        { id: 'task-2', title: 'Prepare proposal for Apex', dueDate: today, ownerId: 'user-3', completed: false, createdAt: new Date().toISOString(), relatedEntity: { type: 'opportunity', id: 'opp-2'} },
-        { id: 'task-3', title: 'Schedule demo with Mike Brown', dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], ownerId: 'user-2', completed: false, createdAt: new Date().toISOString() },
-    ];
-    this.db.tasks.set(initialTasks);
-    
-    // ACTIVITIES
-    const initialActivities: Activity[] = [
-        { id: 'act-1', type: 'Call summary', subject: 'Initial call with Tom', description: 'Discussed Apex needs, seems positive.', startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), status: 'Done', ownerId: 'user-3', relatedEntity: { type: 'contact', id: 'cont-2' } },
-        { id: 'act-2', type: 'Email', subject: 'Re: Innovate Upgrade', description: 'Sent over the pricing details.', startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), status: 'Done', ownerId: 'user-3', relatedEntity: { type: 'opportunity', id: 'opp-1' } },
-        { id: 'act-3', type: 'Meeting', subject: 'Project Kickoff', description: 'Met with the Innovate team.', startTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), status: 'Done', ownerId: 'user-2', relatedEntity: { type: 'company', id: 'comp-1' } },
-    ];
-    this.db.activities.set(initialActivities);
-
-    // EMAIL TEMPLATES
-    const initialTemplates: EmailTemplate[] = [
-        { id: 'tpl-1', name: 'Initial Outreach', subject: 'Intro from {{owner.name}}', body: 'Hi {{contact.name}},\n\nMy name is {{owner.name}} and I work at CRM Pro.\n\nBest,\n{{owner.name}}', createdAt: new Date('2023-05-01').toISOString() },
-        { id: 'tpl-2', name: 'Follow-up', subject: 'Following up', body: 'Hi {{contact.name}},\n\nJust wanted to follow up on our last conversation.\n\nThanks,\n{{owner.name}}', createdAt: new Date('2023-05-15').toISOString() },
-    ];
-    this.db.emailTemplates.set(initialTemplates);
-
-    // PROJECTS
-    const initialProjects: Project[] = [
-      { id: 'proj-1', name: 'Website Redesign', companyId: 'comp-1', status: 'In Progress', budget: 25000, startDate: '2024-07-01', endDate: '2024-10-31', ownerId: 'user-2', description: 'Complete overhaul of the innovate.com website.', createdAt: new Date('2024-06-15').toISOString() },
-      { id: 'proj-2', name: 'Q3 Marketing Campaign', companyId: 'comp-2', status: 'Planning', budget: 40000, startDate: '2024-08-01', endDate: '2024-09-30', ownerId: 'user-2', description: 'Digital marketing campaign for new service launch.', createdAt: new Date('2024-06-20').toISOString() },
-      { id: 'proj-3', name: 'Logistics System Upgrade', companyId: 'comp-3', status: 'Completed', budget: 150000, startDate: '2024-01-10', endDate: '2024-06-10', ownerId: 'user-1', description: 'Upgrade of the core logistics and tracking system.', createdAt: new Date('2024-01-05').toISOString() },
-    ];
-    this.db.projects.set(initialProjects);
-
-    // PRODUCTS & SERVICES
-    const initialProducts: Product[] = [
-      { id: 'prod-1', name: 'CRM Pro License', description: 'Per-seat annual license for our flagship CRM software.', category: 'Software', price: 600, createdAt: new Date('2023-01-01').toISOString(), ownerId: 'user-1' },
-      { id: 'prod-2', name: 'Implementation Package', description: 'Onboarding and implementation service for new clients.', category: 'Service', price: 2500, createdAt: new Date('2023-01-01').toISOString(), ownerId: 'user-2' },
-      { id: 'prod-3', name: 'Advanced Analytics Module', description: 'Add-on module for advanced reporting and business intelligence.', category: 'Software', price: 450, createdAt: new Date('2023-03-01').toISOString(), ownerId: 'user-3' },
-      { id: 'prod-4', name: 'Strategic Consulting', description: 'Hourly consulting with a senior strategist.', category: 'Consulting', price: 300, createdAt: new Date('2023-02-01').toISOString(), ownerId: 'user-2' },
-    ];
-    this.db.products.set(initialProducts);
+    // --- CLEAR ALL TENANT DATA ---
+    // This leaves the system ready for new signups without any pre-existing tenant data.
+    this.db.companies.set([]);
+    this.db.users.set([]);
+    this.db.contacts.set([]);
+    this.db.opportunities.set([]);
+    this.db.tasks.set([]);
+    this.db.activities.set([]);
+    this.db.emailTemplates.set([]);
+    this.db.projects.set([]);
+    this.db.products.set([]);
   }
 
   private request<T>(data: T): Promise<T> {

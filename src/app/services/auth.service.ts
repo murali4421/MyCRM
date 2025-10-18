@@ -164,22 +164,19 @@ export class AuthService {
     }
 
     // CRM User Login
-    const crmUsers = ['admin@crm.com', 'expired@crm.com'];
-    if (crmUsers.includes(form.value.email) && form.value.password === 'password123') {
-        const user = this.dataService.users().find(u => u.email === form.value.email);
-        if (user) {
-            this.currentUser.set(user);
-            this.loginAs.set('crm');
-            this.loggingService.log({
-                id: `log-${Date.now()}`,
-                timestamp: new Date().toISOString(),
-                userId: user.id,
-                action: 'login',
-                details: `User ${user.name} logged in.`,
-                entity: { type: 'user', id: user.id }
-            });
-            return;
-        }
+    const user = this.dataService.users().find(u => u.email === form.value.email);
+    if (user && form.value.password === 'password123') {
+        this.currentUser.set(user);
+        this.loginAs.set('crm');
+        this.loggingService.log({
+            id: `log-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            userId: user.id,
+            action: 'login',
+            details: `User ${user.name} logged in.`,
+            entity: { type: 'user', id: user.id }
+        });
+        return;
     }
     
     this.authError.set('Invalid email or password.');
