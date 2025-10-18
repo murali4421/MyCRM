@@ -13,9 +13,19 @@ import { AuthService } from '../../services/auth.service';
     <div>
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
           <h1 class="text-3xl font-bold text-gray-100">Opportunities</h1>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <button (click)="uiService.openImportModal('opportunities')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
-            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Add Opportunity</button>
+            <div class="flex flex-col items-end">
+              <button 
+                (click)="startAdding()" 
+                [disabled]="isAdding() || !authService.canAddOpportunity()" 
+                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed">
+                Add Opportunity
+              </button>
+               @if (!authService.canAddOpportunity()) {
+                  <p class="text-xs text-yellow-400 mt-1">Your plan limit has been reached.</p>
+              }
+            </div>
           </div>
       </div>
 
@@ -162,6 +172,11 @@ export class OpportunitiesComponent {
   }
 
   startAdding() {
+    if (!this.authService.canAddOpportunity()) {
+        const limit = this.authService.limitFor('opportunity')();
+        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. Please upgrade to add more.`);
+        return;
+    }
     this.isAdding.set(true);
   }
 

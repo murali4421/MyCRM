@@ -1,7 +1,31 @@
-export type AppView = 'dashboard' | 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'users-roles' | 'email-templates' | 'audit-log' | 'projects' | 'products';
+export type AppView = 'dashboard' | 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'users-roles' | 'email-templates' | 'audit-log' | 'projects' | 'products' | 'sa_dashboard' | 'sa_plans';
 export type AuthView = 'login' | 'signup' | 'forgotPassword' | 'resetPassword';
 export type ProfileView = 'personal-info' | 'password' | 'notifications';
 export type UsersAndRolesView = 'users' | 'roles' | 'team';
+export type SuperAdminView = 'dashboard' | 'plans';
+
+export interface ServicePlanFeatures {
+  taskManagement: boolean;
+  aiAssistant: boolean;
+  auditLog: boolean;
+  projects: boolean;
+  products: boolean;
+}
+
+export interface ServicePlan {
+  id: string;
+  name: string;
+  monthlyPrice: number;
+  biannualPrice: number;
+  yearlyPrice: number;
+  userLimit: number; // -1 for unlimited
+  contactLimit: number; // -1 for unlimited
+  opportunityLimit: number; // -1 for unlimited
+  companyLimit: number; // -1 for unlimited
+  features: ServicePlanFeatures;
+  isDefault: boolean;
+}
+
 
 export interface Company {
   id: string;
@@ -10,6 +34,8 @@ export interface Company {
   website: string;
   logoUrl?: string;
   createdAt: string;
+  planId: string;
+  expiryDate?: string | null;
 }
 
 export interface Contact {
@@ -87,6 +113,7 @@ export interface User {
   name: string;
   email: string;
   roleId: string;
+  companyId: string;
   managerId?: string;
   status: 'Active' | 'Inactive' | 'Invited';
   profilePictureUrl: string;

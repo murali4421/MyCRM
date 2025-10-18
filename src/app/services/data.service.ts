@@ -1,5 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
-import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity, Project, Product } from '../models/crm.models';
+import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity, Project, Product, ServicePlan } from '../models/crm.models';
 import { LoggingService } from './logging.service';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
@@ -9,8 +9,8 @@ import { ApiService } from './api.service';
 })
 export class DataService {
   private loggingService = inject(LoggingService);
-  private authService = inject(AuthService);
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
 
   isLoading = signal<boolean>(true);
 
@@ -24,6 +24,7 @@ export class DataService {
   emailTemplates = signal<EmailTemplate[]>([]);
   projects = signal<Project[]>([]);
   products = signal<Product[]>([]);
+  servicePlans = signal<ServicePlan[]>([]);
   
   constructor() {
     this.loadInitialData();
@@ -33,7 +34,7 @@ export class DataService {
     this.isLoading.set(true);
     try {
         const [
-            roles, users, companies, contacts, opportunities, tasks, activities, emailTemplates, projects, products
+            roles, users, companies, contacts, opportunities, tasks, activities, emailTemplates, projects, products, servicePlans
         ] = await Promise.all([
             this.apiService.getRoles(),
             this.apiService.getUsers(),
@@ -45,6 +46,7 @@ export class DataService {
             this.apiService.getEmailTemplates(),
             this.apiService.getProjects(),
             this.apiService.getProducts(),
+            this.apiService.getServicePlans(),
         ]);
 
         this.roles.set(roles);
@@ -57,6 +59,7 @@ export class DataService {
         this.emailTemplates.set(emailTemplates);
         this.projects.set(projects);
         this.products.set(products);
+        this.servicePlans.set(servicePlans);
     } catch (error) {
         console.error("Failed to load initial data", error);
         // Handle error state in UI if necessary
@@ -69,6 +72,7 @@ export class DataService {
   getCompanyById = (id: string | undefined) => this.companies().find(c => c.id === id);
   getUserById = (id: string | undefined) => this.users().find(u => u.id === id);
   getRoleById = (id: string | undefined) => this.roles().find(r => r.id === id);
+  getPlanById = (id: string | undefined) => this.servicePlans().find(p => p.id === id);
   getRelatedEntityName(entity: RelatedEntity) {
     switch(entity.type) {
       case 'company': return this.companies().find(c => c.id === entity.id)?.name;
@@ -82,7 +86,9 @@ export class DataService {
   private log(action: string, details: string, entity: { type: string, id: string }) {
     const user = this.authService.currentUser();
     if (!user) {
-      console.error('Cannot log action, no current user found.');
+      // During signup, user might not be set yet. This is acceptable.
+      // We can log the signup event separately in AuthService after user creation.
+      console.warn('Cannot log action, no current user found. This may be expected during signup.');
       return;
     }
     this.loggingService.log({
@@ -110,6 +116,17 @@ export class DataService {
     await this.apiService.deleteCompany(id);
     this.companies.update(c => c.filter(x => x.id !== id)); 
     if(name) this.log('delete_company', `Deleted company: ${name}`, {type: 'company', id}); 
+  }
+
+  async activatePlanForCompany(companyId: string) {
+    const company = this.getCompanyById(companyId);
+    const startupPlan = this.servicePlans().find(p => p.name === 'Startup');
+    if (company && startupPlan) {
+        const updatedCompany = { ...company, expiryDate: null, planId: startupPlan.id };
+        await this.apiService.updateCompany(updatedCompany);
+        this.companies.update(c => c.map(x => x.id === updatedCompany.id ? updatedCompany : x));
+        this.log('activate_plan', `Activated 'Startup' plan for company: ${company.name}`, { type: 'company', id: company.id });
+    }
   }
 
   async addContact(contact: Contact) { 
@@ -261,6 +278,19 @@ export class DataService {
     await this.apiService.deleteProduct(id);
     this.products.update(p => p.filter(x => x.id !== id));
     if(name) this.log('delete_product', `Deleted product: ${name}`, {type: 'product', id});
+  }
+
+  async addServicePlan(plan: ServicePlan) {
+    const newPlan = await this.apiService.addServicePlan(plan);
+    this.servicePlans.update(p => [...p, newPlan]);
+  }
+  async updateServicePlan(updated: ServicePlan) {
+    const updatedPlan = await this.apiService.updateServicePlan(updated);
+    this.servicePlans.update(p => p.map(x => x.id === updatedPlan.id ? updatedPlan : x));
+  }
+  async deleteServicePlan(id: string) {
+    await this.apiService.deleteServicePlan(id);
+    this.servicePlans.update(p => p.filter(x => x.id !== id));
   }
 
 

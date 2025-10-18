@@ -121,6 +121,9 @@ export class UiService {
   // Contact Popover state
   contactPopoverData = signal<ContactPopoverData | null>(null);
 
+  // Upgrade Modal State
+  isUpgradeModalOpen = signal<{ open: boolean, reason: string }>({ open: false, reason: '' });
+
   constructor() {
     this.loadPaginationFromLocalStorage();
 
@@ -265,6 +268,15 @@ export class UiService {
   closeImportModal() {
     this.isImportModalOpen.set(false);
     this.importTarget.set(null);
+  }
+
+  // --- Upgrade Modal ---
+  openUpgradeModal(reason: string) {
+    this.isUpgradeModalOpen.set({ open: true, reason });
+  }
+
+  closeUpgradeModal() {
+    this.isUpgradeModalOpen.set({ open: false, reason: '' });
   }
 
   // --- Contact Popover ---

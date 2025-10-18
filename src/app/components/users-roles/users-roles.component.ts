@@ -47,7 +47,17 @@ import { Contact, User } from '../../models/crm.models';
           @case('users') {
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold text-gray-100">All Users</h3>
-                <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50">Invite User</button>
+              <div class="flex flex-col items-end">
+                <button 
+                    (click)="startAdding()" 
+                    [disabled]="isAdding() || !authService.canAddUser()" 
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed">
+                    Invite User
+                </button>
+                @if (!authService.canAddUser()) {
+                    <p class="text-xs text-yellow-400 mt-1">Your plan limit has been reached.</p>
+                }
+              </div>
             </div>
               <div class="bg-gray-800 shadow-sm rounded-lg overflow-x-auto border border-gray-700">
               <table class="min-w-full leading-normal">
@@ -252,25 +262,12 @@ export class UsersRolesComponent {
   isAdding = signal(false);
   newUser: Partial<User> = {};
   
-  private currentUserRoleName = computed(() => {
-    const user = this.authService.currentUser();
-    const roles = this.dataService.roles();
-    if (!user || !user.roleId || !roles.length) {
-        return null;
-    }
-    const role = roles.find(r => r.id === user.roleId);
-    if (!role || !role.name) {
-        return null;
-    }
-    return role.name;
-  });
-
-  isUserAdmin = computed(() => this.currentUserRoleName() === 'Admin');
-  isUserAdminOrManager = computed(() => this.currentUserRoleName() === 'Admin' || this.currentUserRoleName() === 'Manager');
+  isUserAdmin = this.authService.isCurrentUserAdmin;
+  isUserAdminOrManager = this.authService.isCurrentUserAdminOrManager;
 
   managerTeam = computed<User[]>(() => {
     const currentUser = this.authService.currentUser();
-    if (this.currentUserRoleName() !== 'Manager' || !currentUser) {
+    if (this.authService.currentUserRole()?.name !== 'Manager' || !currentUser) {
       return [];
     }
     return this.dataService.users().filter(u => u.managerId === currentUser.id);
@@ -303,6 +300,11 @@ export class UsersRolesComponent {
   }
 
   startAdding() {
+    if (!this.authService.canAddUser()) {
+        const limit = this.authService.limitFor('user')();
+        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} users. Please upgrade to add more.`);
+        return;
+    }
     this.newUser = { name: '', email: '', roleId: 'role-3' }; // Default role Sales Rep
     this.isAdding.set(true);
   }
@@ -316,6 +318,11 @@ export class UsersRolesComponent {
       alert('All fields are required.');
       return;
     }
+    const currentUser = this.authService.currentUser();
+    if (!currentUser) {
+      return;
+    }
+    // FIX: Add the required 'companyId' property when creating a new user.
     const userToAdd: User = {
       id: `user-${Date.now()}`,
       status: 'Invited',
@@ -323,6 +330,7 @@ export class UsersRolesComponent {
       name: this.newUser.name,
       email: this.newUser.email,
       roleId: this.newUser.roleId,
+      companyId: currentUser.companyId,
     };
     await this.dataService.addUser(userToAdd);
     this.isAdding.set(false);

@@ -21,7 +21,12 @@ import { Task } from '../../models/crm.models';
               (ngModelChange)="searchTerm.set($event)"
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('tasks')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
-            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Add Task</button>
+            <button 
+              (click)="startAdding()" 
+              [disabled]="isAdding() || !authService.isFeatureEnabled('taskManagement')()" 
+              class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed">
+              Add Task
+            </button>
           </div>
       </div>
 
@@ -225,6 +230,10 @@ export class TasksComponent {
   }
 
   startAdding() {
+    if (!this.authService.isFeatureEnabled('taskManagement')()) {
+        this.uiService.openUpgradeModal("Task Management is not available on your current plan. Please upgrade to add tasks.");
+        return;
+    }
     this.newTask = {
       ownerId: this.authService.currentUser()?.id,
       dueDate: new Date().toISOString().split('T')[0],

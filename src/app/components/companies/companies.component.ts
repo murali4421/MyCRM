@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { Company } from '../../models/crm.models';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-companies',
@@ -21,7 +22,17 @@ import { Company } from '../../models/crm.models';
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('companies')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
-            <button (click)="uiService.openCompanyDetails(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Add Company</button>
+            <div class="flex flex-col items-end">
+              <button 
+                (click)="openAddCompanyModal()" 
+                [disabled]="!authService.canAddCompany()" 
+                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed">
+                Add Company
+              </button>
+              @if (!authService.canAddCompany()) {
+                  <p class="text-xs text-yellow-400 mt-1">Your plan limit has been reached.</p>
+              }
+            </div>
           </div>
       </div>
       <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
@@ -111,6 +122,7 @@ import { Company } from '../../models/crm.models';
 export class CompaniesComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
+  authService = inject(AuthService);
 
   searchTerm = signal('');
 
@@ -133,6 +145,15 @@ export class CompaniesComponent {
       company.industry.toLowerCase().includes(term)
     );
   });
+
+  openAddCompanyModal() {
+    if (!this.authService.canAddCompany()) {
+        const limit = this.authService.limitFor('company')();
+        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. Please upgrade to add more.`);
+        return;
+    }
+    this.uiService.openCompanyDetails(null);
+  }
 
   // Pagination signals
   itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);

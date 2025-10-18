@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, OpportunityStage, Project, Product } from '../models/crm.models';
+import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, OpportunityStage, Project, Product, ServicePlan, ServicePlanFeatures } from '../models/crm.models';
 
 const API_DELAY = 300; // ms
 
@@ -19,6 +19,7 @@ export class ApiService {
     emailTemplates: signal<EmailTemplate[]>([]),
     projects: signal<Project[]>([]),
     products: signal<Product[]>([]),
+    servicePlans: signal<ServicePlan[]>([]),
   };
 
   constructor() {
@@ -34,29 +35,79 @@ export class ApiService {
     ];
     this.db.roles.set(initialRoles);
 
-    // USERS
-    const initialUsers: User[] = [
-      { id: 'user-1', name: 'Alex Johnson', email: 'alex.j@example.com', roleId: 'role-1', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-1' },
-      { id: 'user-2', name: 'Maria Garcia', email: 'maria.g@example.com', roleId: 'role-2', managerId: 'user-1', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-2' },
-      { id: 'user-3', name: 'David Smith', email: 'david.s@example.com', roleId: 'role-3', managerId: 'user-2', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-3' },
-      { id: 'user-4', name: 'Jennifer Lee', email: 'jen.lee@example.com', roleId: 'role-3', managerId: 'user-2', status: 'Invited', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-4' },
+    // SERVICE PLANS
+    const initialServicePlans: ServicePlan[] = [
+        {
+            id: 'plan-free',
+            name: 'Free',
+            monthlyPrice: 0,
+            biannualPrice: 0,
+            yearlyPrice: 0,
+            userLimit: 5,
+            contactLimit: 100,
+            opportunityLimit: 20,
+            companyLimit: 20,
+            features: { taskManagement: true, aiAssistant: false, auditLog: false, projects: false, products: false },
+            isDefault: true,
+        },
+        {
+            id: 'plan-startup',
+            name: 'Startup',
+            monthlyPrice: 49,
+            biannualPrice: 264,
+            yearlyPrice: 499,
+            userLimit: 20,
+            contactLimit: 1000,
+            opportunityLimit: 500,
+            companyLimit: 500,
+            features: { taskManagement: true, aiAssistant: true, auditLog: false, projects: true, products: true },
+            isDefault: false,
+        },
+        {
+            id: 'plan-business',
+            name: 'Business',
+            monthlyPrice: 99,
+            biannualPrice: 534,
+            yearlyPrice: 999,
+            userLimit: -1, // Unlimited
+            contactLimit: -1,
+            opportunityLimit: -1,
+            companyLimit: -1,
+            features: { taskManagement: true, aiAssistant: true, auditLog: true, projects: true, products: true },
+            isDefault: false,
+        }
     ];
-    this.db.users.set(initialUsers);
+    this.db.servicePlans.set(initialServicePlans);
 
     // COMPANIES
+    const expiredDate = new Date();
+    expiredDate.setDate(expiredDate.getDate() - 1); // Yesterday
+
     const initialCompanies: Company[] = [
-      { id: 'comp-1', name: 'Innovate Inc.', industry: 'Technology', website: 'https://innovate.com', createdAt: new Date('2023-01-15').toISOString(), logoUrl: 'https://logo.clearbit.com/innovate.com' },
-      { id: 'comp-2', name: 'Apex Solutions', industry: 'Consulting', website: 'https://apex.com', createdAt: new Date('2023-02-20').toISOString(), logoUrl: 'https://logo.clearbit.com/apex.com' },
-      { id: 'comp-3', name: 'Quantum Logistics', industry: 'Shipping', website: 'https://quantumlog.com', createdAt: new Date('2023-03-10').toISOString(), logoUrl: 'https://logo.clearbit.com/quantum.com' },
+      { id: 'comp-1', name: 'Innovate Inc.', industry: 'Technology', website: 'https://innovate.com', createdAt: new Date('2023-01-15').toISOString(), logoUrl: 'https://logo.clearbit.com/innovate.com', planId: 'plan-business', expiryDate: null },
+      { id: 'comp-2', name: 'Apex Solutions', industry: 'Consulting', website: 'https://apex.com', createdAt: new Date('2023-02-20').toISOString(), logoUrl: 'https://logo.clearbit.com/apex.com', planId: 'plan-startup', expiryDate: null },
+      { id: 'comp-3', name: 'Quantum Logistics', industry: 'Shipping', website: 'https://quantumlog.com', createdAt: new Date('2023-03-10').toISOString(), logoUrl: 'https://logo.clearbit.com/quantum.com', planId: 'plan-startup', expiryDate: null },
+      { id: 'comp-4', name: 'Healthful Goods', industry: 'Retail', website: 'https://healthfulgoods.com', createdAt: new Date('2023-04-05').toISOString(), logoUrl: 'https://logo.clearbit.com/healthfulgoods.com', planId: 'plan-free', expiryDate: null },
+      { id: 'comp-5', name: 'Expired Ventures', industry: 'Defunct', website: 'https://expired.com', createdAt: new Date('2024-01-01').toISOString(), logoUrl: 'https://logo.clearbit.com/expired.com', planId: 'plan-free', expiryDate: expiredDate.toISOString() }
     ];
     this.db.companies.set(initialCompanies);
 
+    // USERS
+    const initialUsers: User[] = [
+      { id: 'user-1', name: 'Admin User', email: 'admin@crm.com', roleId: 'role-1', companyId: 'comp-1', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=admin@crm.com', jobTitle: 'System Admin' },
+      { id: 'user-2', name: 'Maria Garcia', email: 'maria.g@example.com', roleId: 'role-2', companyId: 'comp-1', managerId: 'user-1', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-2', jobTitle: 'Sales Manager' },
+      { id: 'user-3', name: 'David Smith', email: 'david.s@example.com', roleId: 'role-3', companyId: 'comp-1', managerId: 'user-2', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-3', jobTitle: 'Sales Representative' },
+      { id: 'user-4', name: 'Jennifer Lee', email: 'jen.lee@example.com', roleId: 'role-3', companyId: 'comp-2', managerId: 'user-2', status: 'Invited', profilePictureUrl: 'https://i.pravatar.cc/150?u=user-4', jobTitle: 'Sales Representative' },
+      { id: 'user-5', name: 'Expired User', email: 'expired@crm.com', roleId: 'role-3', companyId: 'comp-5', status: 'Active', profilePictureUrl: 'https://i.pravatar.cc/150?u=expired@crm.com', jobTitle: 'Former Employee' },
+    ];
+    this.db.users.set(initialUsers);
+
     // CONTACTS
     const initialContacts: Contact[] = [
-      { id: 'cont-1', name: 'Sarah Chen', email: 'sarah.chen@innovate.com', phone: '555-0101', companyId: 'comp-1', ownerId: 'user-3', createdAt: new Date('2023-01-16').toISOString() },
-      { id: 'cont-2', name: 'Tom Riley', email: 'tom.riley@apex.com', phone: '555-0102', companyId: 'comp-2', ownerId: 'user-3', createdAt: new Date('2023-02-21').toISOString() },
-      { id: 'cont-3', name: 'Linda Kim', email: 'linda.kim@quantumlog.com', phone: '555-0103', companyId: 'comp-3', ownerId: 'user-4', createdAt: new Date('2023-03-11').toISOString() },
-      { id: 'cont-4', name: 'Mike Brown', email: 'mike.brown@innovate.com', phone: '555-0104', companyId: 'comp-1', ownerId: 'user-2', createdAt: new Date('2023-04-01').toISOString() },
+      { id: 'cont-1', name: 'Sarah Chen', email: 'sarah.chen@innovate.com', phone: '555-0101', companyId: 'comp-1', ownerId: 'user-3', createdAt: new Date('2023-01-16').toISOString(), leadScore: 'Warm' },
+      { id: 'cont-2', name: 'Tom Riley', email: 'tom.riley@apex.com', phone: '555-0102', companyId: 'comp-2', ownerId: 'user-3', createdAt: new Date('2023-02-21').toISOString(), leadScore: 'Hot' },
+      { id: 'cont-3', name: 'Linda Kim', email: 'linda.kim@quantumlog.com', phone: '555-0103', companyId: 'comp-3', ownerId: 'user-4', createdAt: new Date('2023-03-11').toISOString(), leadScore: 'Cold' },
+      { id: 'cont-4', name: 'Mike Brown', email: 'mike.brown@innovate.com', phone: '555-0104', companyId: 'comp-1', ownerId: 'user-2', createdAt: new Date('2023-04-01').toISOString(), leadScore: 'Warm' },
     ];
     this.db.contacts.set(initialContacts);
 
@@ -129,6 +180,7 @@ export class ApiService {
   getEmailTemplates = () => this.request(this.db.emailTemplates());
   getProjects = () => this.request(this.db.projects());
   getProducts = () => this.request(this.db.products());
+  getServicePlans = () => this.request(this.db.servicePlans());
 
   // --- ADD ---
   addCompany = (company: Company) => { this.db.companies.update(c => [...c, company]); return this.request(company); };
@@ -140,6 +192,7 @@ export class ApiService {
   addTemplate = (template: EmailTemplate) => { this.db.emailTemplates.update(t => [...t, template]); return this.request(template); };
   addProject = (project: Project) => { this.db.projects.update(p => [...p, project]); return this.request(project); };
   addProduct = (product: Product) => { this.db.products.update(p => [...p, product]); return this.request(product); };
+  addServicePlan = (plan: ServicePlan) => { this.db.servicePlans.update(p => [...p, plan]); return this.request(plan); };
 
   // --- UPDATE ---
   updateCompany = (updated: Company) => { this.db.companies.update(c => c.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
@@ -151,6 +204,7 @@ export class ApiService {
   updateTemplate = (updated: EmailTemplate) => { this.db.emailTemplates.update(t => t.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
   updateProject = (updated: Project) => { this.db.projects.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
   updateProduct = (updated: Product) => { this.db.products.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
+  updateServicePlan = (updated: ServicePlan) => { this.db.servicePlans.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
 
   // --- DELETE ---
   deleteCompany = (id: string) => { this.db.companies.update(c => c.filter(x => x.id !== id)); return this.request({id}); };
@@ -161,4 +215,5 @@ export class ApiService {
   deleteTemplate = (id: string) => { this.db.emailTemplates.update(t => t.filter(x => x.id !== id)); return this.request({id}); };
   deleteProject = (id: string) => { this.db.projects.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
   deleteProduct = (id: string) => { this.db.products.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
+  deleteServicePlan = (id: string) => { this.db.servicePlans.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
 }

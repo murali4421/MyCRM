@@ -22,7 +22,17 @@ import { Contact } from '../../models/crm.models';
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
             <button (click)="uiService.openImportModal('contacts')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('contacts')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
-            <button (click)="uiService.openContactModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Add Contact</button>
+            <div class="flex flex-col items-end">
+                <button 
+                    (click)="openAddContactModal()" 
+                    [disabled]="!authService.canAddContact()"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed">
+                    Add Contact
+                </button>
+                @if (!authService.canAddContact()) {
+                    <p class="text-xs text-yellow-400 mt-1">Your plan limit has been reached.</p>
+                }
+            </div>
           </div>
       </div>
       <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
@@ -162,6 +172,15 @@ export class ContactsComponent {
       contact.email.toLowerCase().includes(term)
     );
   });
+
+  openAddContactModal() {
+    if (!this.authService.canAddContact()) {
+        const limit = this.authService.limitFor('contact')();
+        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. Please upgrade to add more.`);
+        return;
+    }
+    this.uiService.openContactModal(null);
+  }
 
   // Pagination signals
   itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);

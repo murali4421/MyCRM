@@ -67,6 +67,17 @@ import { UiService } from '../../services/ui.service';
             <div class="bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700">
               <h2 class="text-2xl font-bold text-center text-gray-100 mb-6">Create Account</h2>
               <form #signupForm="ngForm" (ngSubmit)="authService.signup(signupForm)">
+                 <div class="mb-4">
+                  <label for="companyName" class="block text-sm font-medium text-gray-300">Company Name</label>
+                  <input type="text" name="companyName" ngModel required #companyName="ngModel"
+                    [class.border-red-500]="companyName.invalid && companyName.touched"
+                    class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                   @if (companyName.invalid && companyName.touched) {
+                      <div class="text-red-500 text-xs mt-1">
+                        @if (companyName.errors?.['required']) { <p>Company Name is required.</p> }
+                      </div>
+                    }
+                </div>
                 <div class="mb-4">
                   <label for="name" class="block text-sm font-medium text-gray-300">Full Name</label>
                   <input type="text" name="name" ngModel required #name="ngModel"

@@ -141,6 +141,12 @@ export class ImportModalComponent {
     }
 
     const importPromises: Promise<any>[] = [];
+    const defaultPlan = this.dataService.servicePlans().find(p => p.isDefault);
+
+    if (!defaultPlan) {
+        alert('Cannot import: No default plan is set.');
+        return;
+    }
 
     this.uiService.csvData().forEach(row => {
       const target = this.uiService.importTarget();
@@ -157,6 +163,7 @@ export class ImportModalComponent {
             industry: industryHeader ? row[industryHeader] || '' : '',
             website: websiteHeader ? row[websiteHeader] || '' : '',
             createdAt: new Date().toISOString(),
+            planId: defaultPlan.id,
           };
           importPromises.push(this.dataService.addCompany(newCompany));
       }
