@@ -273,14 +273,13 @@ export class DataService {
     // 1. Find or create company
     let company = this.companies().find(c => c.name.toLowerCase() === lead.companyName.toLowerCase());
     if (!company) {
-        const trialPlan = this.servicePlans().find(p => p.isDefault)!;
         const newCompany: Company = {
             id: `comp-conv-${Date.now()}`,
             name: lead.companyName,
             industry: 'Not specified',
             website: '',
             createdAt: new Date().toISOString(),
-            planId: trialPlan.id,
+            ownerId: lead.ownerId,
             expiryDate: null,
         };
         await this.addCompany(newCompany);

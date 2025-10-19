@@ -169,12 +169,14 @@ export class ImportModalComponent {
                 return;
             }
 
+            // FIX: Added the missing 'ownerId' property required by the Company interface.
             const newCompany: Company = {
                 id: `comp-${Date.now()}-${index}`,
                 name: row[nameHeader],
                 industry: industryHeader ? row[industryHeader] : '',
                 website: websiteHeader ? row[websiteHeader] : '',
                 createdAt: new Date().toISOString(),
+                ownerId: currentUser.id,
                 planId: defaultPlan.id,
             };
             importPromises.push(this.dataService.addCompany(newCompany));

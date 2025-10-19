@@ -157,12 +157,11 @@ export class CompanyModalComponent {
     const formData = { ...this.companyModel(), ...form.value };
 
     if (this.isNew) {
-      const defaultPlan = this.dataService.servicePlans().find(p => p.isDefault);
       const newCompany: Company = {
         ...formData,
         id: `comp-${Date.now()}`,
         createdAt: new Date().toISOString(),
-        planId: defaultPlan!.id,
+        ownerId: this.authService.currentUser()!.id,
       } as Company;
       await this.dataService.addCompany(newCompany);
     } else {

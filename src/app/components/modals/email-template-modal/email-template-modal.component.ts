@@ -174,14 +174,10 @@ export class EmailTemplateModalComponent implements AfterViewInit {
       const newTemplate: EmailTemplate = {
         ...formData,
         id: `tpl-${Date.now()}`,
-        // FIX: Added the missing 'createdAt' property to conform to the EmailTemplate interface.
         createdAt: new Date().toISOString(),
       };
       await this.dataService.addTemplate(newTemplate);
     } else {
-      // FIX: The EmailTemplate type requires createdAt, but it was missing from the update payload.
-      // Although `formData` is cast to EmailTemplate, it's safer to ensure all required fields exist.
-      // Here, we trust that an existing template (this.templateModel()) already has `createdAt`.
       const updatedTemplate: EmailTemplate = {
           ...this.templateModel(),
           ...formData

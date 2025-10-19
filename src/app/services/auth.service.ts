@@ -33,7 +33,7 @@ export class AuthService {
   
   currentPlan = computed(() => {
       const company = this.currentCompany();
-      if(!company) return null;
+      if(!company || !company.planId) return null;
       return this.dataService.getPlanById(company.planId);
   });
 
@@ -91,26 +91,29 @@ export class AuthService {
       return;
     }
 
-    // 1. Create Company with a trial plan
     const trialPlan = this.dataService.servicePlans().find(p => p.isDefault)!;
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 14); // 14-day trial
     
+    const newCompanyId = `comp-signup-${Date.now()}`;
+    const newUserId = `user-signup-${Date.now()}`;
+
+    // 1. Create Company (which is the tenant)
     const newCompany: Company = {
-      id: `comp-signup-${Date.now()}`,
+      id: newCompanyId,
       name: companyName,
       industry: 'Not specified',
       website: '',
       createdAt: new Date().toISOString(),
       planId: trialPlan.id,
-      expiryDate: expiryDate.toISOString()
+      expiryDate: expiryDate.toISOString(),
+      ownerId: newUserId, // The tenant company is "owned" by its admin
     };
-    await this.dataService.addCompany(newCompany);
-    
+
     // 2. Create Admin User for the company
     const adminRole = this.dataService.roles().find(r => r.name === 'Admin')!;
     const newUser: User = {
-      id: `user-signup-${Date.now()}`,
+      id: newUserId,
       name: name,
       email: email,
       companyId: newCompany.id,
@@ -118,6 +121,8 @@ export class AuthService {
       status: 'Active',
       profilePictureUrl: `https://i.pravatar.cc/150?u=${email}`
     };
+
+    await this.dataService.addCompany(newCompany);
     await this.dataService.addUser(newUser);
 
     // 3. Log in the new user
@@ -191,24 +196,44 @@ export class AuthService {
   canAddUser = computed(() => {
     const limit = this.limitFor('user')();
     if (limit === -1) return true; // Unlimited
-    return this.dataService.users().length < limit;
+    const currentUser = this.currentUser();
+    if (!currentUser) return false;
+    const currentTenantId = currentUser.companyId;
+    const tenantUsersCount = this.dataService.users().filter(u => u.companyId === currentTenantId).length;
+    return tenantUsersCount < limit;
   });
 
   canAddCompany = computed(() => {
     const limit = this.limitFor('company')();
-    if (limit === -1) return true;
-    return this.dataService.companies().length < limit;
+    if (limit === -1) return true; // Unlimited
+    const currentUser = this.currentUser();
+    if (!currentUser) return false;
+    const currentTenantId = currentUser.companyId;
+    const tenantUserIds = new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
+    // Count companies owned by any user in the tenant, including the tenant company itself.
+    const tenantCompaniesCount = this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId)).length;
+    return tenantCompaniesCount < limit;
   });
   
   canAddContact = computed(() => {
     const limit = this.limitFor('contact')();
     if (limit === -1) return true;
-    return this.dataService.contacts().length < limit;
+    const currentUser = this.currentUser();
+    if (!currentUser) return false;
+    const currentTenantId = currentUser.companyId;
+    const tenantUserIds = new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
+    const tenantContactsCount = this.dataService.contacts().filter(c => tenantUserIds.has(c.ownerId)).length;
+    return tenantContactsCount < limit;
   });
   
   canAddOpportunity = computed(() => {
     const limit = this.limitFor('opportunity')();
     if (limit === -1) return true;
-    return this.dataService.opportunities().length < limit;
+    const currentUser = this.currentUser();
+    if (!currentUser) return false;
+    const currentTenantId = currentUser.companyId;
+    const tenantUserIds = new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
+    const tenantOppsCount = this.dataService.opportunities().filter(o => tenantUserIds.has(o.ownerId)).length;
+    return tenantOppsCount < limit;
   });
 }

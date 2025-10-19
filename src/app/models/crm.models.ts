@@ -44,8 +44,9 @@ export interface Company {
   industry: string;
   website: string;
   createdAt: string;
+  ownerId: string;
   logoUrl?: string;
-  planId: string;
+  planId?: string;
   expiryDate?: string | null;
   addressLine1?: string;
   city?: string;

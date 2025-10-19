@@ -4,7 +4,6 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { ServicePlan, ServicePlanFeatures } from '../../models/crm.models';
 
-// FIX: Added missing properties to satisfy the ServicePlanFeatures interface.
 const newPlanFeatures: ServicePlanFeatures = {
     taskManagement: true,
     aiAssistant: false,

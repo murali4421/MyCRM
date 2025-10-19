@@ -318,7 +318,6 @@ export class UsersRolesComponent {
     if (!currentUser) {
       return;
     }
-    // FIX: Add the required 'companyId' property when creating a new user.
     const userToAdd: User = {
       id: `user-${Date.now()}`,
       status: 'Invited',
