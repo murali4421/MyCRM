@@ -1,10 +1,11 @@
 import { Injectable, signal, WritableSignal, effect } from '@angular/core';
 import { 
   AppView, AuthView, ProfileView, UsersAndRolesView,
-  Company, Contact, Opportunity, Task, Activity, User, EmailTemplate, ColumnConfig, AutoActivity, ImportableEntity, RelatedEntity, Project, Product
+  Company, Contact, Opportunity, Task, Activity, User, EmailTemplate, ColumnConfig, AutoActivity, ImportableEntity, RelatedEntity, Project, Product,
+  Lead, Quote, Case
 } from '../models/crm.models';
 
-type ColumnCustomizableTableName = 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'projects';
+type ColumnCustomizableTableName = 'companies' | 'contacts' | 'opportunities' | 'tasks' | 'activities' | 'projects' | 'leads' | 'quotes' | 'cases';
 type PaginatedTableName = ColumnCustomizableTableName | 'audit-log' | 'email-templates' | 'users' | 'team-contacts' | 'products' | 'team-opportunities' | 'team-tasks';
 type TableColumnConfigs = Record<ColumnCustomizableTableName, ColumnConfig[]>;
 
@@ -26,8 +27,9 @@ export class UiService {
   // Auth view state
   authView = signal<AuthView>('login');
 
-  // Header profile menu state
+  // Header state
   isProfileMenuOpen = signal(false);
+  isNotificationCenterOpen = signal(false);
 
   // Profile modal state
   isProfileModalOpen = signal(false);
@@ -49,6 +51,11 @@ export class UiService {
   editingUser = signal<User | null | undefined>(undefined);
   editingTemplate = signal<EmailTemplate | null | undefined>(undefined);
   previewingTemplate = signal<EmailTemplate | undefined>(undefined);
+  selectedLead = signal<Lead | null | undefined>(undefined);
+  leadToConvert = signal<Lead | null>(null);
+  selectedQuote = signal<Quote | null | undefined>(undefined);
+  previewingQuote = signal<Quote | undefined>(undefined);
+  selectedCase = signal<Case | null | undefined>(undefined);
   
   // Email Composer
   emailComposerData = signal<{ to: string; subject: string; body: string; relatedEntity: RelatedEntity | null }>({ to: '', subject: '', body: '', relatedEntity: null });
@@ -107,6 +114,29 @@ export class UiService {
       { id: 'endDate', label: 'End Date', visible: true },
       { id: 'owner', label: 'Owner', visible: false },
     ],
+    leads: [
+      { id: 'name', label: 'Name', visible: true },
+      { id: 'companyName', label: 'Company', visible: true },
+      { id: 'email', label: 'Email', visible: true },
+      { id: 'status', label: 'Status', visible: true },
+      { id: 'source', label: 'Source', visible: true },
+      { id: 'owner', label: 'Owner', visible: true },
+    ],
+    quotes: [
+      { id: 'quoteNumber', label: 'Number', visible: true },
+      { id: 'opportunity', label: 'Opportunity', visible: true },
+      { id: 'status', label: 'Status', visible: true },
+      { id: 'total', label: 'Total', visible: true },
+      { id: 'createdAt', label: 'Created At', visible: true },
+    ],
+    cases: [
+      { id: 'caseNumber', label: 'Case Number', visible: true },
+      { id: 'subject', label: 'Subject', visible: true },
+      { id: 'contact', label: 'Contact', visible: true },
+      { id: 'status', label: 'Status', visible: true },
+      { id: 'priority', label: 'Priority', visible: true },
+      { id: 'owner', label: 'Owner', visible: false },
+    ]
   });
 
   // Pagination State
@@ -246,6 +276,21 @@ export class UiService {
   closeTemplatePreview() {
     this.previewingTemplate.set(undefined);
   }
+
+  openLeadModal(lead: Lead | null) { this.selectedLead.set(lead); }
+  closeLeadModal() { this.selectedLead.set(undefined); }
+
+  openLeadConversionModal(lead: Lead) { this.leadToConvert.set(lead); }
+  closeLeadConversionModal() { this.leadToConvert.set(null); }
+
+  openQuoteModal(quote: Quote | null) { this.selectedQuote.set(quote); }
+  closeQuoteModal() { this.selectedQuote.set(undefined); }
+  
+  openQuotePreview(quote: Quote) { this.previewingQuote.set(quote); }
+  closeQuotePreview() { this.previewingQuote.set(undefined); }
+
+  openCaseModal(kase: Case | null) { this.selectedCase.set(kase); }
+  closeCaseModal() { this.selectedCase.set(undefined); }
   
   openEmailComposer(data: { to: string; subject: string; body: string; relatedEntity: RelatedEntity | null }) {
     this.emailComposerData.set(data);

@@ -1,8 +1,10 @@
-import { Injectable, signal, inject } from '@angular/core';
-import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity, Project, Product, ServicePlan } from '../models/crm.models';
+
+import { Injectable, signal, inject, Injector } from '@angular/core';
+import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity, Project, Product, ServicePlan, OpportunityStage, Lead, LeadStatus, Quote, Case } from '../models/crm.models';
 import { LoggingService } from './logging.service';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
+import { NotificationService } from './notification.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +12,16 @@ import { ApiService } from './api.service';
 export class DataService {
   private loggingService = inject(LoggingService);
   private apiService = inject(ApiService);
-  private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
+  private injector = inject(Injector);
+  private _authService: AuthService | undefined;
+
+  private get authService(): AuthService {
+    if (!this._authService) {
+      this._authService = this.injector.get(AuthService);
+    }
+    return this._authService;
+  }
 
   isLoading = signal<boolean>(true);
 
@@ -25,6 +36,9 @@ export class DataService {
   projects = signal<Project[]>([]);
   products = signal<Product[]>([]);
   servicePlans = signal<ServicePlan[]>([]);
+  leads = signal<Lead[]>([]);
+  quotes = signal<Quote[]>([]);
+  cases = signal<Case[]>([]);
   
   constructor() {
     this.loadInitialData();
@@ -34,7 +48,7 @@ export class DataService {
     this.isLoading.set(true);
     try {
         const [
-            roles, users, companies, contacts, opportunities, tasks, activities, emailTemplates, projects, products, servicePlans
+            roles, users, companies, contacts, opportunities, tasks, activities, emailTemplates, projects, products, servicePlans, leads, quotes, cases
         ] = await Promise.all([
             this.apiService.getRoles(),
             this.apiService.getUsers(),
@@ -47,6 +61,9 @@ export class DataService {
             this.apiService.getProjects(),
             this.apiService.getProducts(),
             this.apiService.getServicePlans(),
+            this.apiService.getLeads(),
+            this.apiService.getQuotes(),
+            this.apiService.getCases(),
         ]);
 
         this.roles.set(roles);
@@ -60,267 +77,244 @@ export class DataService {
         this.projects.set(projects);
         this.products.set(products);
         this.servicePlans.set(servicePlans);
+        this.leads.set(leads);
+        this.quotes.set(quotes);
+        this.cases.set(cases);
     } catch (error) {
         console.error("Failed to load initial data", error);
-        // Handle error state in UI if necessary
     } finally {
         this.isLoading.set(false);
     }
   }
-
-  // --- Getters ---
+  
+  // --- Getters by ID ---
   getCompanyById = (id: string | undefined) => this.companies().find(c => c.id === id);
+  getContactById = (id: string | undefined) => this.contacts().find(c => c.id === id);
   getUserById = (id: string | undefined) => this.users().find(u => u.id === id);
   getRoleById = (id: string | undefined) => this.roles().find(r => r.id === id);
   getPlanById = (id: string | undefined) => this.servicePlans().find(p => p.id === id);
-  getRelatedEntityName(entity: RelatedEntity) {
-    switch(entity.type) {
-      case 'company': return this.companies().find(c => c.id === entity.id)?.name;
-      case 'contact': return this.contacts().find(c => c.id === entity.id)?.name;
-      case 'opportunity': return this.opportunities().find(o => o.id === entity.id)?.name;
+  
+  getRelatedEntityName(entity: RelatedEntity): string {
+    switch (entity.type) {
+      case 'company': return this.getCompanyById(entity.id)?.name || 'N/A';
+      case 'contact': return this.getContactById(entity.id)?.name || 'N/A';
+      case 'opportunity':
+        const opp = this.opportunities().find(o => o.id === entity.id);
+        return opp?.name || 'N/A';
       default: return 'N/A';
     }
   }
 
-  // --- Mutators ---
-  private log(action: string, details: string, entity: { type: string, id: string }) {
-    const user = this.authService.currentUser();
-    if (!user) {
-      // During signup, user might not be set yet. This is acceptable.
-      // We can log the signup event separately in AuthService after user creation.
-      console.warn('Cannot log action, no current user found. This may be expected during signup.');
-      return;
-    }
-    this.loggingService.log({
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      userId: user.id,
-      action,
-      details,
-      entity,
-    });
+  private logAction(action: string, details: string, entity: { type: string, id: string }) {
+      const currentUser = this.authService.currentUser();
+      if (!currentUser) return;
+      this.loggingService.log({
+          id: `log-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          userId: currentUser.id,
+          action,
+          details,
+          entity
+      });
   }
 
-  async addCompany(company: Company) { 
-    const newCompany = await this.apiService.addCompany(company);
-    this.companies.update(c => [...c, newCompany]); 
-    this.log('add_company', `Added company: ${newCompany.name}`, {type: 'company', id: newCompany.id}); 
-  }
-  async updateCompany(updated: Company) { 
-    const updatedCompany = await this.apiService.updateCompany(updated);
-    this.companies.update(c => c.map(x => x.id === updatedCompany.id ? updatedCompany : x)); 
-    this.log('update_company', `Updated company: ${updatedCompany.name}`, {type: 'company', id: updatedCompany.id}); 
-  }
-  async deleteCompany(id: string) { 
-    const name = this.getCompanyById(id)?.name; 
-    await this.apiService.deleteCompany(id);
-    this.companies.update(c => c.filter(x => x.id !== id)); 
-    if(name) this.log('delete_company', `Deleted company: ${name}`, {type: 'company', id}); 
-  }
+  // --- ADD ---
+  async addCompany(company: Company) { this.companies.update(c => [...c, company]); await this.apiService.addCompany(company); this.logAction('create', `Created company: ${company.name}`, { type: 'company', id: company.id }); }
+  async addContact(contact: Contact) { this.contacts.update(c => [...c, contact]); await this.apiService.addContact(contact); this.logAction('create', `Created contact: ${contact.name}`, { type: 'contact', id: contact.id }); this.handleHotLeadTask(contact); }
+  async addOpportunity(opp: Opportunity) { this.opportunities.update(o => [...o, opp]); await this.apiService.addOpportunity(opp); this.logAction('create', `Created opportunity: ${opp.name}`, { type: 'opportunity', id: opp.id }); }
+  async addTask(task: Task) { this.tasks.update(t => [...t, task]); await this.apiService.addTask(task); this.logAction('create', `Created task: ${task.title}`, { type: 'task', id: task.id }); }
+  async addActivity(activity: Activity) { this.activities.update(a => [...a, activity]); await this.apiService.addActivity(activity); this.logAction('create', `Created activity: ${activity.subject}`, { type: 'activity', id: activity.id }); }
+  async addUser(user: User) { this.users.update(u => [...u, user]); await this.apiService.addUser(user); this.logAction('create', `Invited user: ${user.name}`, { type: 'user', id: user.id }); }
+  async addTemplate(template: EmailTemplate) { this.emailTemplates.update(t => [...t, template]); await this.apiService.addTemplate(template); }
+  async addProject(project: Project) { this.projects.update(p => [...p, project]); await this.apiService.addProject(project); this.logAction('create', `Created project: ${project.name}`, { type: 'project', id: project.id }); }
+  async addProduct(product: Product) { this.products.update(p => [...p, product]); await this.apiService.addProduct(product); this.logAction('create', `Created product: ${product.name}`, { type: 'product', id: product.id }); }
+  async addServicePlan(plan: ServicePlan) { this.servicePlans.update(p => [...p, plan]); await this.apiService.addServicePlan(plan); }
+  async addLead(lead: Lead) { this.leads.update(l => [...l, lead]); await this.apiService.addLead(lead); this.logAction('create', `Created lead: ${lead.name}`, { type: 'lead', id: lead.id }); }
+  async addQuote(quote: Quote) { this.quotes.update(q => [...q, quote]); await this.apiService.addQuote(quote); this.logAction('create', `Created quote: ${quote.quoteNumber}`, { type: 'quote', id: quote.id }); }
+  async addCase(kase: Case) { this.cases.update(c => [...c, kase]); await this.apiService.addCase(kase); this.logAction('create', `Created case: ${kase.caseNumber}`, { type: 'case', id: kase.id }); }
 
-  async activatePlanForCompany(companyId: string) {
-    const company = this.getCompanyById(companyId);
-    const startupPlan = this.servicePlans().find(p => p.name === 'Startup');
-    if (company && startupPlan) {
-        const updatedCompany = { ...company, expiryDate: null, planId: startupPlan.id };
-        await this.apiService.updateCompany(updatedCompany);
-        this.companies.update(c => c.map(x => x.id === updatedCompany.id ? updatedCompany : x));
-        this.log('activate_plan', `Activated 'Startup' plan for company: ${company.name}`, { type: 'company', id: company.id });
-    }
-  }
+  // --- UPDATE ---
+  async updateCompany(company: Company) { this.companies.update(c => c.map(x => x.id === company.id ? company : x)); await this.apiService.updateCompany(company); this.logAction('update', `Updated company: ${company.name}`, { type: 'company', id: company.id }); }
+  async updateContact(contact: Contact) { this.contacts.update(c => c.map(x => x.id === contact.id ? contact : x)); await this.apiService.updateContact(contact); this.logAction('update', `Updated contact: ${contact.name}`, { type: 'contact', id: contact.id }); this.handleHotLeadTask(contact); }
+  async updateOpportunity(opp: Opportunity) { const oldOpp = this.opportunities().find(o => o.id === opp.id); this.opportunities.update(o => o.map(x => x.id === opp.id ? opp : x)); await this.apiService.updateOpportunity(opp); this.logAction('update', `Updated opportunity: ${opp.name}`, { type: 'opportunity', id: opp.id }); if (oldOpp?.stage !== OpportunityStage.ClosedWon && opp.stage === OpportunityStage.ClosedWon) { this.handleWonOpportunity(opp); } }
+  async updateTask(task: Task) { this.tasks.update(t => t.map(x => x.id === task.id ? task : x)); await this.apiService.updateTask(task); this.logAction('update', `Updated task: ${task.title}`, { type: 'task', id: task.id }); }
+  async updateActivity(activity: Activity) { this.activities.update(a => a.map(x => x.id === activity.id ? activity : x)); await this.apiService.updateActivity(activity); this.logAction('update', `Updated activity: ${activity.subject}`, { type: 'activity', id: activity.id }); }
+  async updateUser(user: User) { this.users.update(u => u.map(x => x.id === user.id ? user : x)); await this.apiService.updateUser(user); this.logAction('update', `Updated user: ${user.name}`, { type: 'user', id: user.id }); }
+  async updateTemplate(template: EmailTemplate) { this.emailTemplates.update(t => t.map(x => x.id === template.id ? template : x)); await this.apiService.updateTemplate(template); }
+  async updateProject(project: Project) { this.projects.update(p => p.map(x => x.id === project.id ? project : x)); await this.apiService.updateProject(project); this.logAction('update', `Updated project: ${project.name}`, { type: 'project', id: project.id }); }
+  async updateProduct(product: Product) { this.products.update(p => p.map(x => x.id === product.id ? product : x)); await this.apiService.updateProduct(product); this.logAction('update', `Updated product: ${product.name}`, { type: 'product', id: product.id }); }
+  async updateServicePlan(plan: ServicePlan) { this.servicePlans.update(p => p.map(x => x.id === plan.id ? plan : x)); await this.apiService.updateServicePlan(plan); }
+  async updateLead(lead: Lead) { this.leads.update(l => l.map(x => x.id === lead.id ? lead : x)); await this.apiService.updateLead(lead); this.logAction('update', `Updated lead: ${lead.name}`, { type: 'lead', id: lead.id }); }
+  async updateQuote(quote: Quote) { this.quotes.update(q => q.map(x => x.id === quote.id ? quote : x)); await this.apiService.updateQuote(quote); this.logAction('update', `Updated quote: ${quote.quoteNumber}`, { type: 'quote', id: quote.id }); }
+  async updateCase(kase: Case) { this.cases.update(c => c.map(x => x.id === kase.id ? kase : x)); await this.apiService.updateCase(kase); this.logAction('update', `Updated case: ${kase.caseNumber}`, { type: 'case', id: kase.id }); }
 
-  async addContact(contact: Contact) { 
-    const newContact = await this.apiService.addContact(contact);
-    this.contacts.update(c => [...c, newContact]); 
-    this.log('add_contact', `Added contact: ${newContact.name}`, {type: 'contact', id: newContact.id}); 
-  }
-  async updateContact(updated: Contact) { 
-    const updatedContact = await this.apiService.updateContact(updated);
-    this.contacts.update(c => c.map(x => x.id === updatedContact.id ? updatedContact : x)); 
-    this.log('update_contact', `Updated contact: ${updatedContact.name}`, {type: 'contact', id: updatedContact.id}); 
-  }
-  async deleteContact(id: string) { 
-    const name = this.contacts().find(c=>c.id===id)?.name; 
-    await this.apiService.deleteContact(id);
-    this.contacts.update(c => c.filter(x => x.id !== id)); 
-    if(name) this.log('delete_contact', `Deleted contact: ${name}`, {type: 'contact', id}); 
-  }
+  // --- DELETE ---
+  async deleteCompany(id: string) { this.companies.update(c => c.filter(x => x.id !== id)); await this.apiService.deleteCompany(id); this.logAction('delete', `Deleted company ID: ${id}`, { type: 'company', id }); }
+  async deleteContact(id: string) { this.contacts.update(c => c.filter(x => x.id !== id)); await this.apiService.deleteContact(id); this.logAction('delete', `Deleted contact ID: ${id}`, { type: 'contact', id }); }
+  async deleteOpportunity(id: string) { this.opportunities.update(o => o.filter(x => x.id !== id)); await this.apiService.deleteOpportunity(id); this.logAction('delete', `Deleted opportunity ID: ${id}`, { type: 'opportunity', id }); }
+  async deleteTask(id: string) { this.tasks.update(t => t.filter(x => x.id !== id)); await this.apiService.deleteTask(id); this.logAction('delete', `Deleted task ID: ${id}`, { type: 'task', id }); }
+  async deleteActivity(id: string) { this.activities.update(a => a.filter(x => x.id !== id)); await this.apiService.deleteActivity(id); this.logAction('delete', `Deleted activity ID: ${id}`, { type: 'activity', id }); }
+  async deleteTemplate(id: string) { this.emailTemplates.update(t => t.filter(x => x.id !== id)); await this.apiService.deleteTemplate(id); }
+  async deleteProject(id: string) { this.projects.update(p => p.filter(x => x.id !== id)); await this.apiService.deleteProject(id); this.logAction('delete', `Deleted project ID: ${id}`, { type: 'project', id }); }
+  async deleteProduct(id: string) { this.products.update(p => p.filter(x => x.id !== id)); await this.apiService.deleteProduct(id); this.logAction('delete', `Deleted product ID: ${id}`, { type: 'product', id }); }
+  async deleteServicePlan(id: string) { this.servicePlans.update(p => p.filter(x => x.id !== id)); await this.apiService.deleteServicePlan(id); }
+  async deleteLead(id: string) { this.leads.update(l => l.filter(x => x.id !== id)); await this.apiService.deleteLead(id); this.logAction('delete', `Deleted lead ID: ${id}`, { type: 'lead', id }); }
+  async deleteQuote(id: string) { this.quotes.update(q => q.filter(x => x.id !== id)); await this.apiService.deleteQuote(id); this.logAction('delete', `Deleted quote ID: ${id}`, { type: 'quote', id }); }
+  async deleteCase(id: string) { this.cases.update(c => c.filter(x => x.id !== id)); await this.apiService.deleteCase(id); this.logAction('delete', `Deleted case ID: ${id}`, { type: 'case', id }); }
 
-  async addOpportunity(opp: Opportunity) { 
-    const newOpp = await this.apiService.addOpportunity(opp);
-    this.opportunities.update(o => [...o, newOpp]); 
-    this.log('add_opportunity', `Added opportunity: ${newOpp.name}`, {type: 'opportunity', id: newOpp.id}); 
-  }
-  async updateOpportunity(updated: Opportunity) { 
-    const updatedOpp = await this.apiService.updateOpportunity(updated);
-    this.opportunities.update(o => o.map(x => x.id === updatedOpp.id ? updatedOpp : x)); 
-    this.log('update_opportunity', `Updated opportunity: ${updatedOpp.name}`, {type: 'opportunity', id: updatedOpp.id}); 
-  }
-  async deleteOpportunity(id: string) { 
-    const name = this.opportunities().find(o=>o.id===id)?.name; 
-    await this.apiService.deleteOpportunity(id);
-    this.opportunities.update(o => o.filter(x => x.id !== id)); 
-    if(name) this.log('delete_opportunity', `Deleted opportunity: ${name}`, {type: 'opportunity', id}); 
-  }
-
-  async addTask(task: Task) { 
-    const newTask = await this.apiService.addTask(task);
-    this.tasks.update(t => [...t, newTask]); 
-    this.log('add_task', `Added task: ${newTask.title}`, {type: 'task', id: newTask.id}); 
-  }
-  async updateTask(updated: Task) { 
-    const updatedTask = await this.apiService.updateTask(updated);
-    this.tasks.update(t => t.map(x => x.id === updatedTask.id ? updatedTask : x)); 
-    this.log('update_task', `Updated task: ${updatedTask.title}`, {type: 'task', id: updatedTask.id}); 
-  }
-  async deleteTask(id: string) { 
-    const title = this.tasks().find(t=>t.id===id)?.title; 
-    await this.apiService.deleteTask(id);
-    this.tasks.update(t => t.filter(x => x.id !== id)); 
-    if(title) this.log('delete_task', `Deleted task: ${title}`, {type: 'task', id}); 
-  }
-  async toggleTaskCompleted(id: string) {
-    const task = this.tasks().find(t => t.id === id);
-    if (!task) return;
-    const updatedTask = { ...task, completed: !task.completed };
-    await this.apiService.updateTask(updatedTask);
-    this.tasks.update(tasks => tasks.map(t => t.id === id ? updatedTask : t));
-    this.log('update_task', `Task '${updatedTask.title}' marked as ${updatedTask.completed ? 'complete' : 'incomplete'}`, {type: 'task', id: updatedTask.id});
-  }
-
-  async addActivity(activity: Activity) { 
-    const newActivity = await this.apiService.addActivity(activity);
-    this.activities.update(a => [...a, newActivity]); 
-    this.log('add_activity', `Logged activity: ${newActivity.subject}`, {type: 'activity', id: newActivity.id}); 
-  }
-  async updateActivity(updated: Activity) { 
-    const updatedActivity = await this.apiService.updateActivity(updated);
-    this.activities.update(a => a.map(x => x.id === updatedActivity.id ? updatedActivity : x)); 
-    this.log('update_activity', `Updated activity: ${updatedActivity.subject}`, {type: 'activity', id: updatedActivity.id}); 
-  }
-  async deleteActivity(id: string) {
-    const activity = this.activities().find(a => a.id === id);
-    if (activity) {
-      await this.apiService.deleteActivity(id);
-      this.activities.update(a => a.filter(x => x.id !== id));
-      this.log('delete_activity', `Deleted activity: ${activity.subject}`, { type: 'activity', id });
+  // --- SPECIAL ACTIONS ---
+  async toggleTaskCompleted(taskId: string) {
+    const task = this.tasks().find(t => t.id === taskId);
+    if (task) {
+      const updatedTask = { ...task, completed: !task.completed };
+      await this.updateTask(updatedTask);
     }
   }
 
-  async addUser(user: User) { 
-    const newUser = await this.apiService.addUser(user);
-    this.users.update(u => [...u, newUser]); 
-    this.log('add_user', `Invited user: ${newUser.name}`, {type: 'user', id: newUser.id}); 
-  }
-  async updateUser(updated: User) { 
-    const updatedUser = await this.apiService.updateUser(updated);
-    this.users.update(u => u.map(x => x.id === updatedUser.id ? updatedUser : x)); 
-    this.log('update_user', `Updated user: ${updatedUser.name}`, {type: 'user', id: updatedUser.id}); 
-  }
-
-  async addTemplate(template: EmailTemplate) { 
-      const newTemplate = await this.apiService.addTemplate(template);
-      this.emailTemplates.update(t => [...t, newTemplate]); 
-  }
-  async updateTemplate(updated: EmailTemplate) { 
-      const updatedTemplate = await this.apiService.updateTemplate(updated);
-      this.emailTemplates.update(t => t.map(x => x.id === updatedTemplate.id ? updatedTemplate : x)); 
-  }
-  async deleteTemplate(id: string) {
-    const template = this.emailTemplates().find(t => t.id === id);
-    if (template) {
-      await this.apiService.deleteTemplate(id);
-      this.emailTemplates.update(t => t.filter(x => x.id !== id));
-      this.log('delete_template', `Deleted template: ${template.name}`, { type: 'template', id });
+  async reassignContactOwner(contactId: string, newOwnerId: string) {
+    const contact = this.contacts().find(c => c.id === contactId);
+    if (contact) {
+        const updatedContact = { ...contact, ownerId: newOwnerId };
+        await this.updateContact(updatedContact);
+        const newOwner = this.getUserById(newOwnerId);
+        if (newOwner) {
+          this.notificationService.addNotification({
+              userId: newOwnerId,
+              message: `You have been assigned a new contact: ${contact.name}`
+          });
+        }
     }
   }
+  
   async duplicateTemplate(template: EmailTemplate) {
-    const newTemplateData: EmailTemplate = {
+    const newTemplate: EmailTemplate = {
       ...template,
       id: `tpl-${Date.now()}`,
       name: `${template.name} (Copy)`,
       createdAt: new Date().toISOString()
     };
-    const newTemplate = await this.apiService.addTemplate(newTemplateData);
-    this.emailTemplates.update(t => [...t, newTemplate]);
-    this.log('duplicate_template', `Duplicated template: ${template.name}`, { type: 'template', id: newTemplate.id });
+    await this.addTemplate(newTemplate);
   }
 
-  async addProject(project: Project) {
-    const newProject = await this.apiService.addProject(project);
-    this.projects.update(p => [...p, newProject]);
-    this.log('add_project', `Added project: ${newProject.name}`, {type: 'project', id: newProject.id});
+  async activatePlanForCompany(companyId: string) {
+      const company = this.getCompanyById(companyId);
+      if (company) {
+          const startupPlan = this.servicePlans().find(p => p.id === 'plan-startup');
+          if (startupPlan) {
+              const expiryDate = new Date();
+              expiryDate.setDate(expiryDate.getDate() + 30);
+              const updatedCompany: Company = {
+                  ...company,
+                  planId: startupPlan.id,
+                  expiryDate: expiryDate.toISOString()
+              };
+              await this.updateCompany(updatedCompany);
+          }
+      }
   }
-  async updateProject(updated: Project) {
-    const updatedProject = await this.apiService.updateProject(updated);
-    this.projects.update(p => p.map(x => x.id === updatedProject.id ? updatedProject : x));
-    this.log('update_project', `Updated project: ${updatedProject.name}`, {type: 'project', id: updatedProject.id});
-  }
-  async deleteProject(id: string) {
-    const name = this.projects().find(p => p.id === id)?.name;
-    await this.apiService.deleteProject(id);
-    this.projects.update(p => p.filter(x => x.id !== id));
-    if(name) this.log('delete_project', `Deleted project: ${name}`, {type: 'project', id});
-  }
-
-  async addProduct(product: Product) {
-    const newProduct = await this.apiService.addProduct(product);
-    this.products.update(p => [...p, newProduct]);
-    this.log('add_product', `Added product: ${newProduct.name}`, {type: 'product', id: newProduct.id});
-  }
-  async updateProduct(updated: Product) {
-    const updatedProduct = await this.apiService.updateProduct(updated);
-    this.products.update(p => p.map(x => x.id === updatedProduct.id ? updatedProduct : x));
-    this.log('update_product', `Updated product: ${updatedProduct.name}`, {type: 'product', id: updatedProduct.id});
-  }
-  async deleteProduct(id: string) {
-    const name = this.products().find(p => p.id === id)?.name;
-    await this.apiService.deleteProduct(id);
-    this.products.update(p => p.filter(x => x.id !== id));
-    if(name) this.log('delete_product', `Deleted product: ${name}`, {type: 'product', id});
-  }
-
-  async addServicePlan(plan: ServicePlan) {
-    const newPlan = await this.apiService.addServicePlan(plan);
-    this.servicePlans.update(p => [...p, newPlan]);
-  }
-  async updateServicePlan(updated: ServicePlan) {
-    const updatedPlan = await this.apiService.updateServicePlan(updated);
-    this.servicePlans.update(p => p.map(x => x.id === updatedPlan.id ? updatedPlan : x));
-  }
-  async deleteServicePlan(id: string) {
-    await this.apiService.deleteServicePlan(id);
-    this.servicePlans.update(p => p.filter(x => x.id !== id));
+  
+  // --- WORKFLOW AUTOMATIONS ---
+  private async handleHotLeadTask(contact: Contact) {
+      if (contact.leadScore === 'Hot') {
+          const existingTask = this.tasks().find(t => t.relatedEntity?.type === 'contact' && t.relatedEntity.id === contact.id && t.title.includes('Follow up with hot lead'));
+          if (!existingTask) {
+              const dueDate = new Date();
+              dueDate.setDate(dueDate.getDate() + 1); // Due tomorrow
+              const newTask: Task = {
+                  id: `task-hotlead-${Date.now()}`,
+                  title: `Follow up with hot lead: ${contact.name}`,
+                  dueDate: dueDate.toISOString().split('T')[0],
+                  ownerId: contact.ownerId,
+                  relatedEntity: { type: 'contact', id: contact.id },
+                  completed: false,
+                  createdAt: new Date().toISOString()
+              };
+              await this.addTask(newTask);
+              this.notificationService.addNotification({
+                  userId: contact.ownerId,
+                  message: `New hot lead task created for ${contact.name}.`
+              });
+          }
+      }
   }
 
-
-  async reassignContactOwner(contactId: string, newOwnerId: string) {
-    const contact = this.contacts().find(c=>c.id===contactId);
-    if (!contact) return;
-    const updatedContact = { ...contact, ownerId: newOwnerId };
-    await this.apiService.updateContact(updatedContact);
-    this.contacts.update(contacts => contacts.map(c => c.id === contactId ? updatedContact : c));
-    const newOwner = this.getUserById(newOwnerId);
-    if(contact && newOwner) this.log('reassign_contact', `Reassigned contact '${contact.name}' to ${newOwner.name}`, {type: 'contact', id: contact.id});
+  private async handleWonOpportunity(opp: Opportunity) {
+    const projectExists = this.projects().some(p => p.name.includes(`Onboarding for ${opp.name}`));
+    if (!projectExists) {
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30); // 30-day onboarding project
+        const newProject: Project = {
+            id: `proj-onboarding-${Date.now()}`,
+            name: `Onboarding for ${opp.name}`,
+            companyId: opp.companyId,
+            status: 'Planning',
+            budget: opp.value * 0.1, // 10% of deal value for onboarding
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+            ownerId: opp.ownerId,
+            description: `Onboarding project for the deal: ${opp.name}`,
+            createdAt: new Date().toISOString()
+        };
+        await this.addProject(newProject);
+        this.notificationService.addNotification({
+            userId: opp.ownerId,
+            message: `New onboarding project created for your won deal: ${opp.name}`
+        });
+    }
   }
 
-  async reassignOpportunityOwner(opportunityId: string, newOwnerId: string) {
-    const opportunity = this.opportunities().find(o => o.id === opportunityId);
-    if (!opportunity) return;
-    const updatedOpportunity = { ...opportunity, ownerId: newOwnerId };
-    await this.apiService.updateOpportunity(updatedOpportunity);
-    this.opportunities.update(opportunities => opportunities.map(o => o.id === opportunityId ? updatedOpportunity : o));
-    const newOwner = this.getUserById(newOwnerId);
-    if(opportunity && newOwner) this.log('reassign_opportunity', `Reassigned opportunity '${opportunity.name}' to ${newOwner.name}`, {type: 'opportunity', id: opportunity.id});
-  }
+  async convertLead(leadId: string, createOpp: boolean, oppDetails?: { name: string, value: number }) {
+    const lead = this.leads().find(l => l.id === leadId);
+    if (!lead || lead.status === LeadStatus.Qualified) {
+        throw new Error("Lead not found or already converted.");
+    }
+    
+    // 1. Find or create company
+    let company = this.companies().find(c => c.name.toLowerCase() === lead.companyName.toLowerCase());
+    if (!company) {
+        const trialPlan = this.servicePlans().find(p => p.isDefault)!;
+        const newCompany: Company = {
+            id: `comp-conv-${Date.now()}`,
+            name: lead.companyName,
+            industry: 'Not specified',
+            website: '',
+            createdAt: new Date().toISOString(),
+            planId: trialPlan.id,
+            expiryDate: null,
+        };
+        await this.addCompany(newCompany);
+        company = newCompany;
+    }
 
-  async reassignTaskOwner(taskId: string, newOwnerId: string) {
-    const task = this.tasks().find(t => t.id === taskId);
-    if (!task) return;
-    const updatedTask = { ...task, ownerId: newOwnerId };
-    await this.apiService.updateTask(updatedTask);
-    this.tasks.update(tasks => tasks.map(t => t.id === taskId ? updatedTask : t));
-    const newOwner = this.getUserById(newOwnerId);
-    if(task && newOwner) this.log('reassign_task', `Reassigned task '${task.title}' to ${newOwner.name}`, {type: 'task', id: task.id});
+    // 2. Create contact
+    const newContact: Contact = {
+        id: `cont-conv-${Date.now()}`,
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        companyId: company.id,
+        ownerId: lead.ownerId,
+        createdAt: new Date().toISOString()
+    };
+    await this.addContact(newContact);
+
+    // 3. Create opportunity if requested
+    if (createOpp && oppDetails) {
+        const newOpp: Opportunity = {
+            id: `opp-conv-${Date.now()}`,
+            name: oppDetails.name,
+            companyId: company.id,
+            stage: OpportunityStage.Qualification,
+            value: oppDetails.value,
+            closeDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+            ownerId: lead.ownerId,
+            createdAt: new Date().toISOString()
+        };
+        await this.addOpportunity(newOpp);
+    }
+    
+    // 4. Update lead status
+    await this.updateLead({ ...lead, status: LeadStatus.Qualified });
   }
 }

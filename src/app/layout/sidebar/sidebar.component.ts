@@ -89,9 +89,13 @@ export class SidebarComponent {
 
   private allNavItems: NavItem[] = [
     { view: 'dashboard', label: 'Dashboard', iconPath: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { view: 'companies', label: 'Companies', iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0v-4m6 4v-4m6 4v-4m-9 4H7a2 2 0 01-2-2v-4a2 2 0 012-2h2.5' },
+    { view: 'leads', label: 'Leads', iconPath: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962c.513-.96 1.487-1.594 2.522-1.594m-2.522 0A3 3 0 006 18.72m-3.741-.479A9.094 9.094 0 0112 15c-2.176 0-4.209.56-6 1.544'},
     { view: 'contacts', label: 'Contacts', iconPath: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+    { view: 'companies', label: 'Companies', iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0v-4m6 4v-4m6 4v-4m-9 4H7a2 2 0 01-2-2v-4a2 2 0 012-2h2.5' },
     { view: 'opportunities', label: 'Opportunities', iconPath: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+    { view: 'quotes', label: 'Quotes', iconPath: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+    { view: 'cases', label: 'Support Cases', iconPath: 'M18.364 5.636l-1.414 1.414a9 9 0 11-12.728 0L2.93 5.636m16.852 9.899l-1.414-1.414M5.636 18.364l-1.414-1.414m12.728 0l1.414 1.414M12 18a6 6 0 100-12 6 6 0 000 12z' },
+    { view: 'reports', label: 'Reports', iconPath: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { view: 'projects', label: 'Projects', iconPath: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
     { view: 'products', label: 'Products & Services', iconPath: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V5c0-1.1.9-2 2-2z' },
     { view: 'tasks', label: 'Tasks', iconPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },

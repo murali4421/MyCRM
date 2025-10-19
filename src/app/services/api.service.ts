@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, OpportunityStage, Project, Product, ServicePlan, ServicePlanFeatures } from '../models/crm.models';
+import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, OpportunityStage, Project, Product, ServicePlan, ServicePlanFeatures, Lead, Quote, Case, LeadStatus, QuoteStatus, CaseStatus, CasePriority } from '../models/crm.models';
 
 const API_DELAY = 300; // ms
 
@@ -20,6 +20,9 @@ export class ApiService {
     projects: signal<Project[]>([]),
     products: signal<Product[]>([]),
     servicePlans: signal<ServicePlan[]>([]),
+    leads: signal<Lead[]>([]),
+    quotes: signal<Quote[]>([]),
+    cases: signal<Case[]>([]),
   };
 
   constructor() {
@@ -43,11 +46,11 @@ export class ApiService {
             monthlyPrice: 0,
             biannualPrice: 0,
             yearlyPrice: 0,
-            userLimit: 5,
-            contactLimit: 100,
-            opportunityLimit: 20,
-            companyLimit: 20,
-            features: { taskManagement: true, aiAssistant: false, auditLog: false, projects: false, products: false },
+            userLimit: 3,
+            contactLimit: 3,
+            opportunityLimit: 3,
+            companyLimit: 3,
+            features: { taskManagement: true, aiAssistant: true, auditLog: true, projects: true, products: true, leads: true, quotes: true, cases: true, reports: true },
             isDefault: true,
         },
         {
@@ -60,7 +63,7 @@ export class ApiService {
             contactLimit: 1000,
             opportunityLimit: 500,
             companyLimit: 500,
-            features: { taskManagement: true, aiAssistant: true, auditLog: false, projects: true, products: true },
+            features: { taskManagement: true, aiAssistant: true, auditLog: false, projects: true, products: true, leads: true, quotes: true, cases: true, reports: true },
             isDefault: false,
         },
         {
@@ -73,7 +76,7 @@ export class ApiService {
             contactLimit: -1,
             opportunityLimit: -1,
             companyLimit: -1,
-            features: { taskManagement: true, aiAssistant: true, auditLog: true, projects: true, products: true },
+            features: { taskManagement: true, aiAssistant: true, auditLog: true, projects: true, products: true, leads: true, quotes: true, cases: true, reports: true },
             isDefault: false,
         }
     ];
@@ -90,6 +93,9 @@ export class ApiService {
     this.db.emailTemplates.set([]);
     this.db.projects.set([]);
     this.db.products.set([]);
+    this.db.leads.set([]);
+    this.db.quotes.set([]);
+    this.db.cases.set([]);
   }
 
   private request<T>(data: T): Promise<T> {
@@ -110,6 +116,9 @@ export class ApiService {
   getProjects = () => this.request(this.db.projects());
   getProducts = () => this.request(this.db.products());
   getServicePlans = () => this.request(this.db.servicePlans());
+  getLeads = () => this.request(this.db.leads());
+  getQuotes = () => this.request(this.db.quotes());
+  getCases = () => this.request(this.db.cases());
 
   // --- ADD ---
   addCompany = (company: Company) => { this.db.companies.update(c => [...c, company]); return this.request(company); };
@@ -122,6 +131,9 @@ export class ApiService {
   addProject = (project: Project) => { this.db.projects.update(p => [...p, project]); return this.request(project); };
   addProduct = (product: Product) => { this.db.products.update(p => [...p, product]); return this.request(product); };
   addServicePlan = (plan: ServicePlan) => { this.db.servicePlans.update(p => [...p, plan]); return this.request(plan); };
+  addLead = (lead: Lead) => { this.db.leads.update(l => [...l, lead]); return this.request(lead); };
+  addQuote = (quote: Quote) => { this.db.quotes.update(q => [...q, quote]); return this.request(quote); };
+  addCase = (kase: Case) => { this.db.cases.update(c => [...c, kase]); return this.request(kase); };
 
   // --- UPDATE ---
   updateCompany = (updated: Company) => { this.db.companies.update(c => c.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
@@ -134,6 +146,9 @@ export class ApiService {
   updateProject = (updated: Project) => { this.db.projects.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
   updateProduct = (updated: Product) => { this.db.products.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
   updateServicePlan = (updated: ServicePlan) => { this.db.servicePlans.update(p => p.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
+  updateLead = (updated: Lead) => { this.db.leads.update(l => l.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
+  updateQuote = (updated: Quote) => { this.db.quotes.update(q => q.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
+  updateCase = (updated: Case) => { this.db.cases.update(c => c.map(x => x.id === updated.id ? updated : x)); return this.request(updated); };
 
   // --- DELETE ---
   deleteCompany = (id: string) => { this.db.companies.update(c => c.filter(x => x.id !== id)); return this.request({id}); };
@@ -145,4 +160,7 @@ export class ApiService {
   deleteProject = (id: string) => { this.db.projects.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
   deleteProduct = (id: string) => { this.db.products.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
   deleteServicePlan = (id: string) => { this.db.servicePlans.update(p => p.filter(x => x.id !== id)); return this.request({id}); };
+  deleteLead = (id: string) => { this.db.leads.update(l => l.filter(x => x.id !== id)); return this.request({id}); };
+  deleteQuote = (id: string) => { this.db.quotes.update(q => q.filter(x => x.id !== id)); return this.request({id}); };
+  deleteCase = (id: string) => { this.db.cases.update(c => c.filter(x => x.id !== id)); return this.request({id}); };
 }

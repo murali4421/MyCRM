@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Company, Contact } from '../../../models/crm.models';
+import { Company, Opportunity, Contact } from '../../../models/crm.models';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { GeminiService } from '../../../services/gemini.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-company-modal',
@@ -12,87 +13,95 @@ import { GeminiService } from '../../../services/gemini.service';
   template: `
     <div class="fixed inset-0 bg-black/30 z-40" (click)="uiService.closeCompanyDetails()"></div>
     <div class="fixed inset-y-0 right-0 w-full max-w-2xl bg-gray-800 z-50 flex flex-col">
-       <header class="p-4 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
+      <header class="p-4 border-b border-gray-700 flex justify-between items-center">
         <h2 class="text-xl font-semibold text-gray-100">{{ isNew ? 'New Company' : 'Company Details' }}</h2>
         <button (click)="uiService.closeCompanyDetails()" class="p-2 rounded-full hover:bg-gray-700">
           <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </header>
 
-      <form #companyForm="ngForm" (ngSubmit)="saveCompany(companyForm)" class="flex-1 flex flex-col overflow-hidden">
-        <div class="flex-1 overflow-y-auto p-6">
-            <div class="flex items-center space-x-4 mb-6">
-              @if (logoUrl()) {
-                <img [src]="logoUrl()" alt="Company logo" class="h-20 w-20 rounded-lg object-cover border border-gray-700">
-              } @else {
-                <div class="h-20 w-20 rounded-lg bg-gray-700 flex items-center justify-center text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0v-4m6 4v-4m6 4v-4m-9 4H7a2 2 0 01-2-2v-4a2 2 0 012-2h2.5" /></svg>
+      <div class="flex-1 overflow-y-auto p-6">
+        <form #companyForm="ngForm" (ngSubmit)="saveCompany(companyForm)">
+          <div class="flex items-start space-x-6">
+            <div class="relative">
+              @if(geminiService.isGeneratingLogo()) {
+                <div class="w-24 h-24 rounded-md bg-gray-700 flex items-center justify-center animate-pulse">
+                  <svg class="w-10 h-10 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.217-.266.498-.5.796-.7L21 5.25M11.42 15.17l-4.653 4.653a2.652 2.652 0 01-3.75 0L3 17.25a2.652 2.652 0 010-3.75l4.653-4.653M3 17.25l2.496-3.03c.217-.266.498-.5.796-.7L12 5.25" /></svg>
                 </div>
+              } @else {
+                <img class="w-24 h-24 rounded-md object-cover bg-gray-700" [src]="companyModel().logoUrl || 'https://placehold.co/96x96/374151/9ca3af/png?text=Logo'" alt="Company logo">
               }
-              <div>
-                <h3 class="text-lg font-semibold text-gray-100">{{ companyModel()?.name || 'New Company' }}</h3>
-                <p class="text-sm text-gray-400">{{ companyModel()?.industry }}</p>
-              </div>
+              <button type="button" (click)="generateLogo(companyForm)" [disabled]="!companyForm.value.name || geminiService.isGeneratingLogo()" class="absolute -bottom-2 -right-2 bg-indigo-600 p-1.5 rounded-full text-white shadow-md hover:bg-indigo-700 disabled:bg-gray-500" title="Generate logo with AI">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
+              </button>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-300">Company Name</label>
-                <input type="text" name="name" [ngModel]="companyModel()?.name" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <input type="text" name="name" [(ngModel)]="companyModel().name" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-300">Industry</label>
-                <input type="text" name="industry" [ngModel]="companyModel()?.industry" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <input type="text" name="industry" [(ngModel)]="companyModel().industry" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
               </div>
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-300">Website</label>
-                <input type="text" name="website" [ngModel]="companyModel()?.website" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <input type="text" name="website" [(ngModel)]="companyModel().website" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
               </div>
-                <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-300">Company Logo</label>
-                <div class="flex items-center space-x-2 mt-1">
-                    <input type="text" name="logoUrl" [(ngModel)]="logoUrl" placeholder="Enter image URL or generate one" class="block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                    <button type="button" (click)="generateLogo(companyForm)" [disabled]="geminiService.isGeneratingLogo() || !companyForm.value.name" class="bg-indigo-500/10 text-indigo-300 px-3 py-2 rounded-md hover:bg-indigo-500/20 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
-                      @if (geminiService.isGeneratingLogo()) {
-                          <div class="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
-                      } @else {
-                          <span>✨ Generate</span>
-                      }
-                    </button>
-                </div>
-                </div>
             </div>
+          </div>
 
-            @if(!isNew && companyContacts().length > 0) {
-              <div class="mt-6 pt-6 border-t border-gray-700">
-                  <h3 class="text-lg font-semibold text-gray-100 mb-4">Contacts at this Company</h3>
-                  <ul class="space-y-3">
-                      @for(contact of companyContacts(); track contact.id) {
-                          <li class="flex justify-between items-center bg-gray-900 p-3 rounded-md">
-                              <div>
-                                  <p class="font-medium text-gray-100">{{ contact.name }}</p>
-                                  <p class="text-sm text-gray-400">{{ contact.email }}</p>
-                              </div>
-                              <button type="button" (click)="openComposer(contact)" class="text-indigo-400 hover:text-indigo-300 font-medium text-sm flex items-center space-x-1">
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                  </svg>
-                                  <span>Email</span>
-                              </button>
-                          </li>
-                      }
-                  </ul>
+          <div class="mt-6 pt-6 border-t border-gray-700">
+            <h3 class="text-lg font-medium text-gray-200">Address Information</h3>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-300">Address</label>
+                <input type="text" name="addressLine1" [(ngModel)]="companyModel().addressLine1" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
               </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">City</label>
+                <input type="text" name="city" [(ngModel)]="companyModel().city" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">State / Province</label>
+                <input type="text" name="state" [(ngModel)]="companyModel().state" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Postal Code</label>
+                <input type="text" name="postalCode" [(ngModel)]="companyModel().postalCode" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+              </div>
+            </div>
+          </div>
+
+
+          <div class="mt-8 pt-4 border-t border-gray-700 flex justify-end gap-2">
+            @if(!isNew) {
+              <button type="button" (click)="deleteCompany()" class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-md hover:bg-red-500/20 text-sm font-medium mr-auto">Delete</button>
             }
-        </div>
-        <footer class="p-4 bg-gray-900 border-t border-gray-700 flex justify-end gap-2 flex-shrink-0">
             <button type="button" (click)="uiService.closeCompanyDetails()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
-            <button type="submit" [disabled]="companyForm.invalid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save</button>
-              @if(!isNew) {
-              <button type="button" (click)="deleteCompany()" class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-md hover:bg-red-500/20 text-sm font-medium">Delete</button>
+            <button type="submit" [disabled]="companyForm.invalid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Company</button>
+          </div>
+        </form>
+
+        @if(!isNew) {
+          <div class="mt-8">
+            <h3 class="text-lg font-semibold text-gray-100 mb-4">Related Contacts ({{ relatedContacts().length }})</h3>
+            <div class="bg-gray-900 rounded-md border border-gray-700">
+              @for(contact of relatedContacts(); track contact.id) {
+                <div class="p-3 border-b border-gray-700 last:border-b-0 flex justify-between items-center">
+                  <div>
+                    <p class="font-medium text-gray-100">{{ contact.name }}</p>
+                    <p class="text-sm text-gray-400">{{ contact.email }}</p>
+                  </div>
+                  <button (click)="uiService.openContactModal(contact)" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium">View</button>
+                </div>
+              } @empty {
+                <p class="p-4 text-center text-sm text-gray-500">No contacts found for this company.</p>
               }
-        </footer>
-      </form>
+            </div>
+          </div>
+        }
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -101,12 +110,12 @@ export class CompanyModalComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   geminiService = inject(GeminiService);
+  authService = inject(AuthService);
 
   isNew = false;
   companyModel = signal<Partial<Company>>({});
-  logoUrl = signal<string | undefined>('');
 
-  companyContacts = computed(() => {
+  relatedContacts = computed(() => {
     const companyId = this.companyModel()?.id;
     if (!companyId) return [];
     return this.dataService.contacts().filter(c => c.companyId === companyId);
@@ -114,91 +123,64 @@ export class CompanyModalComponent {
 
   constructor() {
     effect(() => {
-        const selectedCompany = this.uiService.selectedCompany();
-        untracked(() => {
-            if (selectedCompany === undefined) {
-                // Modal is closed, do nothing.
-                return;
-            }
-
-            if (selectedCompany === null) {
-                // New company mode
-                this.isNew = true;
-                this.companyModel.set({});
-                this.logoUrl.set('');
-            } else {
-                // Edit company mode
-                this.isNew = false;
-                this.companyModel.set({ ...selectedCompany });
-                this.logoUrl.set(selectedCompany.logoUrl);
-            }
-        });
+      const selectedCompany = this.uiService.selectedCompany();
+      untracked(() => {
+        if (selectedCompany === undefined) return;
+        if (selectedCompany === null) {
+          this.isNew = true;
+          this.companyModel.set({});
+        } else {
+          this.isNew = false;
+          this.companyModel.set({ ...selectedCompany });
+        }
+      });
     });
   }
 
   async generateLogo(form: NgForm) {
-    if (!form.value.name) return;
-    const result = await this.geminiService.generateLogo({ companyName: form.value.name, industry: form.value.industry });
-    if (result) {
-      this.logoUrl.set(result);
+    if (!form.value.name || !form.value.industry) {
+      alert('Please provide a company name and industry to generate a logo.');
+      return;
     }
-  }
-
-  openComposer(contact: Contact) {
-    this.uiService.openEmailComposer({
-      to: contact.email,
-      subject: '',
-      body: '',
-      relatedEntity: { type: 'company', id: this.companyModel().id! }
-    });
+    const prompt = {
+      companyName: form.value.name,
+      industry: form.value.industry,
+    };
+    const logoUrl = await this.geminiService.generateLogo(prompt);
+    if (logoUrl) {
+      this.companyModel.update(c => ({...c, logoUrl}));
+    }
   }
 
   async saveCompany(form: NgForm) {
     if (form.invalid) return;
-    const formData = { ...this.companyModel(), ...form.value, logoUrl: this.logoUrl() };
+    const formData = { ...this.companyModel(), ...form.value };
 
     if (this.isNew) {
+      const defaultPlan = this.dataService.servicePlans().find(p => p.isDefault);
       const newCompany: Company = {
         ...formData,
         id: `comp-${Date.now()}`,
         createdAt: new Date().toISOString(),
-      };
+        planId: defaultPlan!.id,
+      } as Company;
       await this.dataService.addCompany(newCompany);
     } else {
       await this.dataService.updateCompany(formData as Company);
     }
     this.uiService.closeCompanyDetails();
   }
-
+  
   async deleteCompany() {
-    const companyId = this.companyModel()?.id;
+    const companyId = this.companyModel().id;
     if (!companyId) return;
 
-    // Check for associated records
-    const associatedContacts = this.dataService.contacts().filter(c => c.companyId === companyId);
-    const associatedOpportunities = this.dataService.opportunities().filter(o => o.companyId === companyId);
-    const associatedProjects = this.dataService.projects().filter(p => p.companyId === companyId);
-
-    const hasAssociations = associatedContacts.length > 0 || associatedOpportunities.length > 0 || associatedProjects.length > 0;
-
-    if (hasAssociations) {
-      let message = `This company cannot be deleted because it is associated with:\n`;
-      if (associatedContacts.length > 0) {
-        message += `\n- ${associatedContacts.length} contact(s)`;
-      }
-      if (associatedOpportunities.length > 0) {
-        message += `\n- ${associatedOpportunities.length} opportunity(ies)`;
-      }
-      if (associatedProjects.length > 0) {
-        message += `\n- ${associatedProjects.length} project(s)`;
-      }
-      message += `\n\nPlease reassign or delete these records first.`;
-      
-      alert(message);
-      return;
+    const contacts = this.dataService.contacts().filter(c => c.companyId === companyId);
+    if (contacts.length > 0) {
+        alert(`Cannot delete company. It has ${contacts.length} associated contact(s). Please reassign or delete them first.`);
+        return;
     }
 
-    // If no associations, proceed with deletion confirmation
     if (confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
         await this.dataService.deleteCompany(companyId);
         this.uiService.closeCompanyDetails();

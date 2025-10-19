@@ -6,6 +6,7 @@ import { UiService } from '../../services/ui.service';
 import { Activity } from '../../models/crm.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
+import { GeminiService } from '../../services/gemini.service';
 
 @Component({
   selector: 'app-activities',
@@ -74,11 +75,20 @@ import { AuthService } from '../../services/auth.service';
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-300">Subject</label>
-                <input type="text" name="subject" ngModel required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                <input type="text" name="subject" [(ngModel)]="newActivity.subject" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-300">Description / Notes</label>
-                <textarea name="description" ngModel rows="3" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm"></textarea>
+                 <div class="relative">
+                    <textarea name="description" [(ngModel)]="newActivity.description" rows="3" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm"></textarea>
+                    <button type="button" (click)="generateSummary()" [disabled]="geminiService.isGeneratingSummary() || !newActivity.description" class="absolute bottom-2 right-2 bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-md hover:bg-indigo-500/20 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                        @if (geminiService.isGeneratingSummary()) {
+                          <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                        } @else {
+                          <span>✨ Summarize</span>
+                        }
+                    </button>
+                </div>
               </div>
             </div>
             <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
@@ -224,6 +234,7 @@ export class ActivitiesComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   authService = inject(AuthService);
+  geminiService = inject(GeminiService);
   private sanitizer: DomSanitizer = inject(DomSanitizer);
 
   // View and Filter State
@@ -336,6 +347,16 @@ export class ActivitiesComponent {
 
   cancelAdd() {
     this.isAdding.set(false);
+  }
+  
+  async generateSummary() {
+    const textToSummarize = this.newActivity.description;
+    if (!textToSummarize) return;
+    const result = await this.geminiService.generateActivitySummary(textToSummarize);
+    if (result) {
+        this.newActivity.subject = result.subject;
+        this.newActivity.description = result.description;
+    }
   }
 
   async saveNewActivity(form: NgForm) {

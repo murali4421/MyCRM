@@ -1,48 +1,56 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from './app/services/auth.service';
-import { UiService } from './app/services/ui.service';
-import { DataService } from './app/services/data.service';
+import { AuthService } from './services/auth.service';
+import { UiService } from './services/ui.service';
+import { DataService } from './services/data.service';
 
 // Layout components
-import { HeaderComponent } from './app/layout/header/header.component';
-import { SidebarComponent } from './app/layout/sidebar/sidebar.component';
+import { HeaderComponent } from './layout/header/header.component';
+import { SidebarComponent } from './layout/sidebar/sidebar.component';
 
 // Page components
-import { DashboardComponent } from './app/components/dashboard/dashboard.component';
-import { CompaniesComponent } from './app/components/companies/companies.component';
-import { ContactsComponent } from './app/components/contacts/contacts.component';
-import { OpportunitiesComponent } from './app/components/opportunities/opportunities.component';
-import { TasksComponent } from './app/components/tasks/tasks.component';
-import { ActivitiesComponent } from './app/components/activities/activities.component';
-import { UsersRolesComponent } from './app/components/users-roles/users-roles.component';
-import { EmailTemplatesComponent } from './app/components/email-templates/email-templates.component';
-import { AuditLogComponent } from './app/components/audit-log/audit-log.component';
-import { ProjectsComponent } from './app/components/projects/projects.component';
-import { ProductsComponent } from './app/components/products/products.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { CompaniesComponent } from './components/companies/companies.component';
+import { ContactsComponent } from './components/contacts/contacts.component';
+import { OpportunitiesComponent } from './components/opportunities/opportunities.component';
+import { TasksComponent } from './components/tasks/tasks.component';
+import { ActivitiesComponent } from './components/activities/activities.component';
+import { UsersRolesComponent } from './components/users-roles/users-roles.component';
+import { EmailTemplatesComponent } from './components/email-templates/email-templates.component';
+import { AuditLogComponent } from './components/audit-log/audit-log.component';
+import { ProjectsComponent } from './components/projects/projects.component';
+import { ProductsComponent } from './components/products/products.component';
+import { LeadsComponent } from './components/leads/leads.component';
+import { QuotesComponent } from './components/quotes/quotes.component';
+import { CasesComponent } from './components/cases/cases.component';
+import { ReportsComponent } from './components/reports/reports.component';
 
 // Auth component
-import { AuthComponent } from './app/components/auth/auth.component';
+import { AuthComponent } from './components/auth/auth.component';
 
 // Modal components
-import { ProfileModalComponent } from './app/components/modals/profile-modal/profile-modal.component';
-import { CompanyModalComponent } from './app/components/modals/company-modal/company-modal.component';
-import { ContactModalComponent } from './app/components/modals/contact-modal/contact-modal.component';
-import { OpportunityModalComponent } from './app/components/modals/opportunity-modal/opportunity-modal.component';
-import { TaskModalComponent } from './app/components/modals/task-modal/task-modal.component';
-import { ActivityModalComponent } from './app/components/modals/activity-modal/activity-modal.component';
-import { UserModalComponent } from './app/components/modals/user-modal/user-modal.component';
-import { EmailTemplateModalComponent } from './app/components/modals/email-template-modal/email-template-modal.component';
-import { EmailComposerModalComponent } from './app/components/modals/email-composer-modal/email-composer-modal.component';
-import { ImportModalComponent } from './app/components/modals/import-modal/import-modal.component';
-import { ColumnCustomizationComponent } from './app/components/modals/column-customization/column-customization.component';
-import { EmailTemplatePreviewModalComponent } from './app/components/modals/email-template-preview-modal/email-template-preview-modal.component';
-import { ContactPopoverComponent } from './app/components/shared/contact-popover/contact-popover.component';
-import { ProjectModalComponent } from './app/components/modals/project-modal/project-modal.component';
-import { ProductModalComponent } from './app/components/modals/product-modal/product-modal.component';
-import { SuperAdminComponent } from './app/components/super-admin/super-admin.component';
-import { PlanEditorComponent } from './app/components/super-admin/plan-editor.component';
-import { UpgradePlanModalComponent } from './app/components/modals/upgrade-plan-modal/upgrade-plan-modal.component';
+import { ProfileModalComponent } from './components/modals/profile-modal/profile-modal.component';
+import { CompanyModalComponent } from './components/modals/company-modal/company-modal.component';
+import { ContactModalComponent } from './components/modals/contact-modal/contact-modal.component';
+import { OpportunityModalComponent } from './components/modals/opportunity-modal/opportunity-modal.component';
+import { TaskModalComponent } from './components/modals/task-modal/task-modal.component';
+import { ActivityModalComponent } from './components/modals/activity-modal/activity-modal.component';
+import { UserModalComponent } from './components/modals/user-modal/user-modal.component';
+import { EmailTemplateModalComponent } from './components/modals/email-template-modal/email-template-modal.component';
+import { EmailComposerModalComponent } from './components/modals/email-composer-modal/email-composer-modal.component';
+import { ImportModalComponent } from './components/modals/import-modal/import-modal.component';
+import { ColumnCustomizationComponent } from './components/modals/column-customization/column-customization.component';
+import { EmailTemplatePreviewModalComponent } from './components/modals/email-template-preview-modal/email-template-preview-modal.component';
+import { ContactPopoverComponent } from './components/shared/contact-popover/contact-popover.component';
+import { ProjectModalComponent } from './components/modals/project-modal/project-modal.component';
+import { ProductModalComponent } from './components/modals/product-modal/product-modal.component';
+import { SuperAdminComponent } from './components/super-admin/super-admin.component';
+import { UpgradePlanModalComponent } from './components/modals/upgrade-plan-modal/upgrade-plan-modal.component';
+import { LeadModalComponent } from './components/modals/lead-modal/lead-modal.component';
+import { LeadConversionModalComponent } from './components/modals/lead-conversion-modal/lead-conversion-modal.component';
+import { QuoteModalComponent } from './components/modals/quote-modal/quote-modal.component';
+import { QuotePreviewModalComponent } from './components/modals/quote-preview-modal/quote-preview-modal.component';
+import { CaseModalComponent } from './components/modals/case-modal/case-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -76,9 +84,13 @@ import { UpgradePlanModalComponent } from './app/components/modals/upgrade-plan-
                     @if (isCurrentViewAllowed()) {
                         @switch (uiService.view()) {
                           @case ('dashboard') { <app-dashboard /> }
+                          @case ('leads') { <app-leads /> }
                           @case ('companies') { <app-companies /> }
                           @case ('contacts') { <app-contacts /> }
                           @case ('opportunities') { <app-opportunities /> }
+                          @case ('quotes') { <app-quotes /> }
+                          @case ('cases') { <app-cases /> }
+                          @case ('reports') { <app-reports /> }
                           @case ('projects') { <app-projects /> }
                           @case ('products') { <app-products /> }
                           @case ('tasks') { <app-tasks /> }
@@ -123,6 +135,11 @@ import { UpgradePlanModalComponent } from './app/components/modals/upgrade-plan-
             @if (uiService.isImportModalOpen()) { <app-import-modal /> }
             @if (uiService.activeColumnCustomization()) { <app-column-customization /> }
             @if (uiService.isUpgradeModalOpen().open) { <app-upgrade-plan-modal /> }
+            @if (uiService.selectedLead() !== undefined) { <app-lead-modal /> }
+            @if (uiService.leadToConvert()) { <app-lead-conversion-modal /> }
+            @if (uiService.selectedQuote() !== undefined) { <app-quote-modal /> }
+            @if (uiService.previewingQuote()) { <app-quote-preview-modal /> }
+            @if (uiService.selectedCase() !== undefined) { <app-case-modal /> }
 
             <!-- Contact Popover -->
             <app-contact-popover />
@@ -151,6 +168,10 @@ import { UpgradePlanModalComponent } from './app/components/modals/upgrade-plan-
     AuditLogComponent,
     ProjectsComponent,
     ProductsComponent,
+    LeadsComponent,
+    QuotesComponent,
+    CasesComponent,
+    ReportsComponent,
     AuthComponent,
     ProfileModalComponent,
     CompanyModalComponent,
@@ -168,8 +189,12 @@ import { UpgradePlanModalComponent } from './app/components/modals/upgrade-plan-
     ProjectModalComponent,
     ProductModalComponent,
     SuperAdminComponent,
-    PlanEditorComponent,
     UpgradePlanModalComponent,
+    LeadModalComponent,
+    LeadConversionModalComponent,
+    QuoteModalComponent,
+    QuotePreviewModalComponent,
+    CaseModalComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
