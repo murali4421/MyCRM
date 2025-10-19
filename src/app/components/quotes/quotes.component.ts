@@ -224,3 +224,15 @@ export class QuotesComponent {
 
   getOpportunityName(oppId: string): string {
     return this.dataService.opportunities().find(o => o.id === oppId)?.name || 'N/A';
+  }
+
+  getStatusBadgeClass(status: QuoteStatus): string {
+    const map: Record<QuoteStatus, string> = {
+      [QuoteStatus.Draft]: 'bg-gray-500/10 text-gray-300',
+      [QuoteStatus.Sent]: 'bg-sky-500/10 text-sky-300',
+      [QuoteStatus.Accepted]: 'bg-emerald-500/10 text-emerald-300',
+      [QuoteStatus.Declined]: 'bg-rose-500/10 text-rose-300',
+    };
+    return map[status];
+  }
+}
