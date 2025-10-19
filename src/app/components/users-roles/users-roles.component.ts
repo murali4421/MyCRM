@@ -47,17 +47,13 @@ import { Contact, User } from '../../models/crm.models';
           @case('users') {
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold text-gray-100">All Users</h3>
-              <div class="flex flex-col items-end">
-                <button 
-                    (click)="startAdding()" 
-                    [disabled]="isAdding() || !authService.canAddUser()" 
-                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed">
-                    Invite User
-                </button>
-                @if (!authService.canAddUser()) {
-                    <p class="text-xs text-yellow-400 mt-1">Your plan limit has been reached.</p>
-                }
-              </div>
+              <button 
+                  (click)="startAdding()" 
+                  [disabled]="isAdding() || !authService.canAddUser()" 
+                  [title]="authService.canAddUser() ? 'Invite a new user' : 'Your plan limit has been reached. Please upgrade.'"
+                  class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed">
+                  Invite User
+              </button>
             </div>
               <div class="bg-gray-800 shadow-sm rounded-lg overflow-x-auto border border-gray-700">
               <table class="min-w-full leading-normal">

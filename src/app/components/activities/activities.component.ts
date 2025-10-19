@@ -61,7 +61,7 @@ import { GeminiService } from '../../services/gemini.service';
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
                   <label class="block text-sm font-medium text-gray-300">Type</label>
-                  <select name="type" [(ngModel)]="newActivity.type" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                  <select name="type" [ngModel]="newActivity().type" (ngModelChange)="updateNewActivityField('type', $event)" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
                     <option>Call summary</option>
                     <option>Email</option>
                     <option>Meeting</option>
@@ -70,18 +70,18 @@ import { GeminiService } from '../../services/gemini.service';
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-300">Date & Time</label>
-                  <input type="datetime-local" name="startTime" [(ngModel)]="newActivity.startTime" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                  <input type="datetime-local" name="startTime" [ngModel]="newActivity().startTime" (ngModelChange)="updateNewActivityField('startTime', $event)" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
                 </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-300">Subject</label>
-                <input type="text" name="subject" [(ngModel)]="newActivity.subject" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                <input type="text" name="subject" [ngModel]="newActivity().subject" (ngModelChange)="updateNewActivityField('subject', $event)" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-300">Description / Notes</label>
                  <div class="relative">
-                    <textarea name="description" [(ngModel)]="newActivity.description" rows="3" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm"></textarea>
-                    <button type="button" (click)="generateSummary()" [disabled]="geminiService.isGeneratingSummary() || !newActivity.description" class="absolute bottom-2 right-2 bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-md hover:bg-indigo-500/20 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                    <textarea name="description" [ngModel]="newActivity().description" (ngModelChange)="updateNewActivityField('description', $event)" rows="3" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm"></textarea>
+                    <button type="button" (click)="generateSummary()" [disabled]="geminiService.isGeneratingSummary() || !newActivity().description" class="absolute bottom-2 right-2 bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-md hover:bg-indigo-500/20 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
                         @if (geminiService.isGeneratingSummary()) {
                           <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
                         } @else {
@@ -243,7 +243,7 @@ export class ActivitiesComponent {
   typeFilter = signal<string>('all');
   ownerFilter = signal<string>('all');
   isAdding = signal(false);
-  newActivity: Partial<Activity> = {};
+  newActivity = signal<Partial<Activity>>({});
 
   constructor() {
     effect(() => {
@@ -253,6 +253,13 @@ export class ActivitiesComponent {
       this.ownerFilter();
       this.uiService.setCurrentPage('activities', 1);
     });
+  }
+
+  updateNewActivityField(field: keyof Partial<Activity>, value: any) {
+    this.newActivity.update(activity => ({
+      ...activity,
+      [field]: value,
+    }));
   }
 
   private getVisibleUserIds = computed(() => {
@@ -336,12 +343,12 @@ export class ActivitiesComponent {
   }
   
   startAdding() {
-    this.newActivity = {
+    this.newActivity.set({
       ownerId: this.authService.currentUser()?.id,
       startTime: new Date().toISOString().slice(0, 16),
       status: 'Done',
       type: 'Call summary'
-    };
+    });
     this.isAdding.set(true);
   }
 
@@ -350,12 +357,15 @@ export class ActivitiesComponent {
   }
   
   async generateSummary() {
-    const textToSummarize = this.newActivity.description;
+    const textToSummarize = this.newActivity().description;
     if (!textToSummarize) return;
     const result = await this.geminiService.generateActivitySummary(textToSummarize);
     if (result) {
-        this.newActivity.subject = result.subject;
-        this.newActivity.description = result.description;
+        this.newActivity.update(activity => ({
+            ...activity,
+            subject: result.subject,
+            description: result.description
+        }));
     }
   }
 
@@ -363,6 +373,7 @@ export class ActivitiesComponent {
     if (form.invalid) return;
 
     const activityToAdd: Activity = {
+      ...this.newActivity(),
       ...form.value,
       id: `act-${Date.now()}`,
       startTime: new Date(form.value.startTime).toISOString(),
@@ -392,10 +403,10 @@ export class ActivitiesComponent {
 
   getIconPath(type: Activity['type']): SafeHtml {
     const icons: { [key: string]: string } = {
-      'Call summary': `<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.211-.992-.553-1.348l-1.447-1.448a1.5 1.5 0 00-2.122 0L16.5 17.25a8.25 8.25 0 01-11.42-11.42L6.75 4.5a1.5 1.5 0 000-2.122l-1.447-1.448A2.25 2.25 0 003.622 1.5H2.25z" />`,
+      'Call summary': `<path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 19v3m-4 0h8" />`,
       'Email': `<path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25-2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />`,
-      'Meeting': `<path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962c.513-.96 1.487-1.594 2.522-1.594m-2.522 0A3 3 0 006 18.72M18 18.72A9.094 9.094 0 0018 18.72m0 0A17.998 17.998 0 0012 15c-2.176 0-4.209.56-6 1.544m12-1.544c-.298-.354-.62-.682-.973-.973c-.353-.29-.718-.556-1.092-.796M12 15c-2.176 0-4.209-.56-6 1.544m0 0A17.998 17.998 0 0112 15m-6 1.544c.298.354.62.682.973.973c.353.29.718-.556 1.092.796M12 15c2.176 0-4.209-.56-6 1.544m6-1.544v-2.563a1.5 1.5 0 00-1.5-1.5h-1.5a1.5 1.5 0 00-1.5 1.5v2.563m0 0V15m0 0a9 9 0 1018 0a9 9 0 00-18 0z" />`,
-      'Note': `<path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />`,
+      'Meeting': `<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493m-4.83 2.493a9.337 9.337 0 004.121.952A9.38 9.38 0 0015 19.128M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.663M5.106 5.106A7.5 7.5 0 0112 3.375c1.621 0 2.922.784 3.665 1.954C16.299 6.544 16.68 7.708 16.68 8.875c0 1.25-.401 2.414-1.003 3.438C15.048 13.513 13.632 14.25 12 14.25c-1.632 0-3.048-.737-3.665-1.937C7.701 11.289 7.32 10.125 7.32 8.875c0-1.167.393-2.331 1.003-3.438C8.952 4.159 10.368 3.375 12 3.375z" />`,
+      'Note': `<path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />`,
     };
     const svgContent = icons[type] || '';
     return this.sanitizer.bypassSecurityTrustHtml(svgContent);

@@ -21,17 +21,13 @@ import { AuthService } from '../../services/auth.service';
               (ngModelChange)="searchTerm.set($event)"
               class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
             <button (click)="uiService.openImportModal('opportunities')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Import</button>
-            <div class="flex flex-col items-end">
-              <button 
-                (click)="startAdding()" 
-                [disabled]="isAdding() || !authService.canAddOpportunity()" 
-                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed">
-                Add Opportunity
-              </button>
-               @if (!authService.canAddOpportunity()) {
-                  <p class="text-xs text-yellow-400 mt-1">Your plan limit has been reached.</p>
-              }
-            </div>
+            <button 
+              (click)="startAdding()" 
+              [disabled]="isAdding() || !authService.canAddOpportunity()" 
+              [title]="authService.canAddOpportunity() ? 'Add a new opportunity' : 'Your plan limit has been reached. Please upgrade.'"
+              class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed">
+              Add Opportunity
+            </button>
           </div>
       </div>
 
