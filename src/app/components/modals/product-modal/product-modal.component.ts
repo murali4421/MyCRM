@@ -5,6 +5,7 @@ import { Product } from '../../../models/crm.models';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { AuthService } from '../../../services/auth.service';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-product-modal',
@@ -12,45 +13,45 @@ import { AuthService } from '../../../services/auth.service';
   template: `
     <div class="fixed inset-0 bg-black/30 z-40" (click)="uiService.closeProductModal()"></div>
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
-        <header class="p-4 border-b border-gray-700 flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-gray-100">{{ isNew ? 'New Product/Service' : 'Edit Product/Service' }}</h2>
-            <button (click)="uiService.closeProductModal()" class="p-2 rounded-full hover:bg-gray-700">
-              <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      <div class="rounded-lg shadow-xl w-full max-w-lg" [class]="themeService.c('bg-primary')">
+        <header class="p-4 border-b flex justify-between items-center" [class]="themeService.c('border-primary')">
+            <h2 class="text-xl font-semibold" [class]="themeService.c('text-primary')">{{ isNew ? 'New Product/Service' : 'Edit Product/Service' }}</h2>
+            <button (click)="uiService.closeProductModal()" class="p-2 rounded-full" [class]="themeService.c('bg-primary-hover')">
+              <svg class="h-6 w-6" [class]="themeService.c('text-secondary')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </header>
         <form #productForm="ngForm" (ngSubmit)="saveProduct(productForm)">
             <div class="p-6">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-300">Name</label>
-                        <input type="text" name="name" [ngModel]="productModel()?.name" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                        <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Name</label>
+                        <input type="text" name="name" [ngModel]="productModel()?.name" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-300">Category</label>
-                            <select name="category" [ngModel]="productModel()?.category" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-gray-700 text-gray-200 border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Category</label>
+                            <select name="category" [ngModel]="productModel()?.category" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                                 @for(cat of productCategories; track cat) {
                                     <option [value]="cat">{{cat}}</option>
                                 }
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-300">Price (USD)</label>
-                            <input type="number" name="price" [ngModel]="productModel()?.price" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm">
+                            <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Price (USD)</label>
+                            <input type="number" name="price" [ngModel]="productModel()?.price" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-300">Description</label>
-                        <textarea name="description" [ngModel]="productModel()?.description" rows="5" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm"></textarea>
+                        <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Description</label>
+                        <textarea name="description" [ngModel]="productModel()?.description" rows="5" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')"></textarea>
                     </div>
                 </div>
             </div>
             <footer class="px-6 pb-6 pt-4 flex justify-end gap-2">
-                <button type="button" (click)="uiService.closeProductModal()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
-                <button type="submit" [disabled]="productForm.invalid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Product</button>
+                <button type="button" (click)="uiService.closeProductModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
+                <button type="submit" [disabled]="productForm.invalid" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled')">Save Product</button>
                 @if(!isNew) {
-                    <button type="button" (click)="deleteProduct()" class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-md hover:bg-red-500/20 text-sm font-medium">Delete</button>
+                    <button type="button" (click)="deleteProduct()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-danger-subtle') + ' ' + themeService.c('border-danger-subtle') + ' ' + themeService.c('text-danger') + ' ' + themeService.c('hover:bg-danger-subtle-hover')">Delete</button>
                 }
             </footer>
         </form>
@@ -63,6 +64,7 @@ export class ProductModalComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   authService = inject(AuthService);
+  themeService = inject(ThemeService);
 
   isNew = false;
   productModel = signal<Partial<Product>>({});

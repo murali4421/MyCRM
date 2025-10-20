@@ -5,6 +5,7 @@ import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { Project } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-projects',
@@ -12,61 +13,62 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <div>
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-          <h1 class="text-3xl font-bold text-gray-100">Projects</h1>
+          <h1 class="text-3xl font-bold" [class]="themeService.c('text-primary')">Projects</h1>
           <div class="flex flex-wrap items-center gap-2">
             <input 
               type="text" 
               placeholder="Search projects..." 
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
-              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto order-first sm:order-none">
-            <button (click)="uiService.activeColumnCustomization.set('projects')" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Columns</button>
-            <button (click)="uiService.openProjectModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">Add Project</button>
+              class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto order-first sm:order-none"
+              [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+            <button (click)="uiService.activeColumnCustomization.set('projects')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
+            <button (click)="uiService.openProjectModal(null)" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover')">Add Project</button>
           </div>
       </div>
-      <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
+      <div class="rounded-lg shadow-sm border overflow-x-auto" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
         <table class="min-w-full">
-          <thead class="bg-gray-900">
+          <thead [class]="themeService.c('bg-base')">
             <tr>
               @for(col of visibleColumns(); track col.id) {
-                <th class="px-4 py-3 border-b border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{{col.label}}</th>
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">{{col.label}}</th>
               }
-              <th class="px-4 py-3 border-b border-gray-700"></th>
+              <th class="px-4 py-3 border-b" [class]="themeService.c('border-primary')"></th>
             </tr>
           </thead>
-            <tbody class="bg-gray-800 divide-y divide-gray-700">
+            <tbody class="divide-y" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
               @for (project of paginatedProjects(); track project.id) {
-                <tr class="hover:bg-gray-700 cursor-pointer" (click)="uiService.openProjectModal(project)">
+                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="uiService.openProjectModal(project)">
                   @if (isColumnVisible('name')) {
-                    <td class="px-4 py-3 text-sm font-medium text-gray-100">{{project.name}}</td>
+                    <td class="px-4 py-3 text-sm font-medium" [class]="themeService.c('text-primary')">{{project.name}}</td>
                   }
                   @if (isColumnVisible('company')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getCompanyById(project.companyId)?.name }}</td>
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{ dataService.getCompanyById(project.companyId)?.name }}</td>
                   }
                   @if (isColumnVisible('status')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getStatusBadgeClass(project.status)">
                             {{ project.status }}
                         </span>
                     </td>
                   }
                   @if (isColumnVisible('budget')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">{{project.budget | currency}}</td>
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{project.budget | currency}}</td>
                   }
                    @if (isColumnVisible('endDate')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">{{project.endDate | date:'mediumDate'}}</td>
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{project.endDate | date:'mediumDate'}}</td>
                   }
                   @if (isColumnVisible('owner')) {
-                    <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getUserById(project.ownerId)?.name }}</td>
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{ dataService.getUserById(project.ownerId)?.name }}</td>
                   }
                   <td class="px-4 py-3 text-sm text-right">
-                    <button (click)="$event.stopPropagation(); uiService.openProjectModal(project)" class="text-indigo-400 hover:text-indigo-300 font-medium">Details</button>
+                    <button (click)="$event.stopPropagation(); uiService.openProjectModal(project)" class="font-medium" [class]="themeService.c('text-accent') + ' ' + themeService.c('hover:text-accent-hover')">Details</button>
                   </td>
                 </tr>
               }
               @empty {
                 <tr>
-                    <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8 text-gray-400">No projects found.</td>
+                    <td [attr.colspan]="visibleColumns().length + 1" class="text-center py-8" [class]="themeService.c('text-secondary')">No projects found.</td>
                 </tr>
               }
             </tbody>
@@ -75,10 +77,10 @@ import { AuthService } from '../../services/auth.service';
 
       <!-- Pagination Controls -->
       @if (totalPages() > 0 && filteredProjects().length > 0) {
-        <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
+        <div class="flex items-center justify-between py-3 px-4 border-t rounded-b-lg" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
           <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
             <div>
-              <p class="text-sm text-gray-300">
+              <p class="text-sm" [class]="themeService.c('text-base')">
                 Showing
                 <span class="font-medium">{{ startItemNumber() }}</span>
                 to
@@ -89,19 +91,19 @@ import { AuthService } from '../../services/auth.service';
               </p>
             </div>
             <div class="flex items-center space-x-4">
-               <select [ngModel]="itemsPerPage()" (ngModelChange)="changeItemsPerPage($event)" class="p-2 border rounded-md bg-gray-700 text-gray-200 border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+               <select [ngModel]="itemsPerPage()" (ngModelChange)="changeItemsPerPage($event)" class="p-2 border rounded-md focus:outline-none text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-2') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                   <option value="10">10 per page</option>
                   <option value="25">25 per page</option>
                   <option value="50">50 per page</option>
                </select>
               <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
+                <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium disabled:opacity-50" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')">
                   <span class="sr-only">Previous</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 </button>
-                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
-                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ currentPage() }} / {{ totalPages() }} </span>
-                <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
+                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border text-sm font-medium" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-base')"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border text-sm font-medium" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-base')"> {{ currentPage() }} / {{ totalPages() }} </span>
+                <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium disabled:opacity-50" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')">
                   <span class="sr-only">Next</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                 </button>
@@ -118,15 +120,21 @@ export class ProjectsComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   authService = inject(AuthService);
+  themeService = inject(ThemeService);
 
   searchTerm = signal('');
 
   constructor() {
     effect(() => {
-      this.searchTerm(); // establish dependency
+      // When the search term changes, reset the current page to 1.
+      this.searchTerm();
       this.uiService.setCurrentPage('projects', 1);
     });
   }
+
+  columns = computed(() => this.uiService.tableColumnConfigs().projects);
+  visibleColumns = computed(() => this.columns().filter(c => c.visible));
+  isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
 
   private getVisibleUserIds = computed(() => {
     const currentUser = this.authService.currentUser();
@@ -153,21 +161,21 @@ export class ProjectsComponent {
     
     return [currentUser.id]; // Sales Rep
   });
-
-  visibleProjects = computed(() => this.dataService.projects().filter(p => this.getVisibleUserIds().includes(p.ownerId)));
-
-  columns = computed(() => this.uiService.tableColumnConfigs().projects);
-  visibleColumns = computed(() => this.columns().filter(c => c.visible));
-  isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
+  
+  private visibleProjects = computed(() => {
+    const userIds = this.getVisibleUserIds();
+    return this.dataService.projects().filter(p => userIds.includes(p.ownerId));
+  });
 
   filteredProjects = computed(() => {
     const term = this.searchTerm().toLowerCase();
     return this.visibleProjects().filter(project => 
       project.name.toLowerCase().includes(term) ||
-      (this.dataService.getCompanyById(project.companyId)?.name.toLowerCase() || '').includes(term)
+      project.description.toLowerCase().includes(term)
     );
   });
 
+  // Pagination signals
   itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
   currentPage = computed(() => this.uiService.pagination().currentPage['projects'] || 1);
   totalPages = computed(() => {
@@ -194,6 +202,7 @@ export class ProjectsComponent {
     return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredProjects().length);
   });
 
+  // Methods to handle pagination changes
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
       this.uiService.setCurrentPage('projects', newPage);
@@ -206,11 +215,11 @@ export class ProjectsComponent {
   
   getStatusBadgeClass(status: Project['status']): string {
     const classMap: Record<Project['status'], string> = {
-      'Planning': 'bg-gray-500/10 text-gray-300',
-      'In Progress': 'bg-sky-500/10 text-sky-300',
-      'Completed': 'bg-emerald-500/10 text-emerald-300',
-      'On Hold': 'bg-amber-500/10 text-amber-300',
+      'Planning': this.themeService.c('bg-info-subtle') + ' ' + this.themeService.c('text-info'),
+      'In Progress': this.themeService.c('bg-warning-subtle') + ' ' + this.themeService.c('text-warning'),
+      'Completed': this.themeService.c('bg-success-subtle') + ' ' + this.themeService.c('text-success'),
+      'On Hold': this.themeService.c('bg-secondary') + ' ' + this.themeService.c('text-base'),
     };
-    return classMap[status] || 'bg-gray-500/10 text-gray-300';
+    return classMap[status];
   }
 }

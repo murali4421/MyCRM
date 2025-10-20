@@ -4,8 +4,8 @@ import { UiService } from '../../services/ui.service';
 import { AppView } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
 import { LogoComponent } from '../../components/shared/logo/logo.component';
+import { ThemeService } from '../../services/theme.service';
 
-// FIX: Added NavItem interface to define the structure for navigation items.
 interface NavItem {
   view: AppView;
   label: string;
@@ -21,7 +21,7 @@ interface NavItem {
       <div class="lg:hidden fixed inset-0 flex z-40">
         <!-- Off-canvas menu -->
         <div class="fixed inset-0 bg-black/30" (click)="uiService.isSidebarOpen.set(false)"></div>
-        <div class="relative flex-1 flex flex-col max-w-xs w-full bg-gray-900">
+        <div class="relative flex-1 flex flex-col max-w-xs w-full" [class]="themeService.c('bg-primary')">
           <div class="absolute top-0 right-0 -mr-12 pt-2">
             <button (click)="uiService.isSidebarOpen.set(false)" class="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
               <span class="sr-only">Close sidebar</span>
@@ -31,16 +31,16 @@ interface NavItem {
           <div class="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div class="flex-shrink-0 flex items-center px-4 space-x-3">
               <app-logo sizeClass="w-8 h-8"></app-logo>
-              <h1 class="text-xl font-bold text-white">Cortex CRM</h1>
+              <h1 class="text-xl font-bold" [class]="themeService.c('text-accent')">Cortex CRM</h1>
             </div>
             <nav class="mt-5 px-2 space-y-1">
               @for (item of visibleNavItems(); track item.view) {
                 <a href="#" (click)="$event.preventDefault(); handleNavClick(item)"
-                  [class]="isActive(item.view) ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                  [class]="isActive(item.view) ? themeService.c('bg-accent') + ' ' + themeService.c('text-on-accent') : themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')"
                   [class.opacity-50]="authService.isPlanExpired() && item.view !== 'dashboard'"
                   [class.pointer-events-none]="authService.isPlanExpired() && item.view !== 'dashboard'"
                   class="group flex items-center px-2 py-2 text-base font-medium rounded-md">
-                  <svg class="mr-4 flex-shrink-0 h-6 w-6" [class]="isActive(item.view) ? 'text-gray-300' : 'text-gray-500 group-hover:text-gray-300'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <svg class="mr-4 flex-shrink-0 h-6 w-6" [class]="isActive(item.view) ? themeService.c('text-on-accent') : themeService.c('text-tertiary') + ' group-hover:text-slate-300'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.iconPath" />
                   </svg>
                   {{ item.label }}
@@ -57,19 +57,19 @@ interface NavItem {
     <div class="hidden lg:flex lg:flex-shrink-0">
       <div class="flex flex-col w-64">
         <div class="flex flex-col h-0 flex-1">
-          <div class="flex items-center h-16 flex-shrink-0 px-4 bg-gray-950 space-x-3">
+          <div class="flex items-center h-16 flex-shrink-0 px-4 space-x-3" [class]="themeService.c('bg-tertiary')">
             <app-logo sizeClass="w-8 h-8"></app-logo>
-            <h1 class="text-xl font-bold text-white">Cortex CRM</h1>
+            <h1 class="text-xl font-bold" [class]="themeService.c('text-contrast')">Cortex CRM</h1>
           </div>
-          <div class="flex-1 flex flex-col overflow-y-auto bg-gray-900">
+          <div class="flex-1 flex flex-col overflow-y-auto" [class]="themeService.c('bg-primary')">
             <nav class="flex-1 px-2 py-4 space-y-1">
               @for (item of visibleNavItems(); track item.view) {
                 <a href="#" (click)="$event.preventDefault(); handleNavClick(item)"
-                  [class]="isActive(item.view) ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                  [class]="isActive(item.view) ? themeService.c('bg-accent') + ' ' + themeService.c('text-on-accent') : themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')"
                   [class.opacity-50]="authService.isPlanExpired() && item.view !== 'dashboard'"
                   [class.pointer-events-none]="authService.isPlanExpired() && item.view !== 'dashboard'"
                   class="group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                  <svg class="mr-3 flex-shrink-0 h-6 w-6" [class]="isActive(item.view) ? 'text-gray-300' : 'text-gray-500 group-hover:text-gray-300'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <svg class="mr-3 flex-shrink-0 h-6 w-6" [class]="isActive(item.view) ? themeService.c('text-on-accent') : themeService.c('text-tertiary') + ' group-hover:text-slate-300'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.iconPath" />
                   </svg>
                   {{ item.label }}
@@ -86,6 +86,7 @@ interface NavItem {
 export class SidebarComponent {
   uiService = inject(UiService);
   authService = inject(AuthService);
+  themeService = inject(ThemeService);
 
   private allNavItems: NavItem[] = [
     { view: 'dashboard', label: 'Dashboard', iconPath: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },

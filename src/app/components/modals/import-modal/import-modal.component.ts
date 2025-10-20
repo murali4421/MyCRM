@@ -5,6 +5,7 @@ import { UiService } from '../../../services/ui.service';
 import { DataService } from '../../../services/data.service';
 import { Contact, Company, Opportunity, OpportunityStage, Task, ImportableEntity } from '../../../models/crm.models';
 import { AuthService } from '../../../services/auth.service';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-import-modal',
@@ -12,40 +13,40 @@ import { AuthService } from '../../../services/auth.service';
   template: `
     <div class="fixed inset-0 bg-black/30 z-40" (click)="uiService.closeImportModal()"></div>
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
-        <header class="p-4 border-b border-gray-700 flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-gray-100">Import {{ uiService.importTarget() | titlecase }}</h2>
-            <button (click)="uiService.closeImportModal()" class="p-2 rounded-full hover:bg-gray-700">
-              <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      <div class="rounded-lg shadow-xl w-full max-w-2xl" [class]="themeService.c('bg-primary')">
+        <header class="p-4 border-b flex justify-between items-center" [class]="themeService.c('border-primary')">
+            <h2 class="text-xl font-semibold" [class]="themeService.c('text-primary')">Import {{ uiService.importTarget() | titlecase }}</h2>
+            <button (click)="uiService.closeImportModal()" class="p-2 rounded-full" [class]="themeService.c('bg-primary-hover')">
+              <svg class="h-6 w-6" [class]="themeService.c('text-secondary')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </header>
         <div class="p-6">
           @if(uiService.importStep() === 'upload') {
             <div>
-              <p class="text-gray-300 mb-4">Upload a CSV file to import your data.</p>
-              <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-md">
+              <p class="mb-4" [class]="themeService.c('text-base')">Upload a CSV file to import your data.</p>
+              <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md" [class]="themeService.c('border-secondary')">
                 <div class="space-y-1 text-center">
-                  <svg class="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                  <div class="flex text-sm text-gray-400">
-                    <label for="file-upload" class="relative cursor-pointer bg-gray-800 rounded-md font-medium text-indigo-400 hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 focus-within:ring-offset-gray-800">
+                  <svg class="mx-auto h-12 w-12" [class]="themeService.c('text-tertiary')" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  <div class="flex text-sm" [class]="themeService.c('text-secondary')">
+                    <label for="file-upload" class="relative cursor-pointer rounded-md font-medium focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2" [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-accent') + ' hover:text-accent-hover' + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:ring-offset-primary')">
                       <span>Upload a file</span>
                       <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileUpload($event)" accept=".csv">
                     </label>
                     <p class="pl-1">or drag and drop</p>
                   </div>
-                  <p class="text-xs text-gray-500">CSV up to 10MB</p>
+                  <p class="text-xs" [class]="themeService.c('text-tertiary')">CSV up to 10MB</p>
                 </div>
               </div>
             </div>
           }
           @if(uiService.importStep() === 'map') {
             <div>
-                <p class="text-gray-300 mb-4">Map the columns from your CSV to the fields in Cortex CRM.</p>
+                <p class="mb-4" [class]="themeService.c('text-base')">Map the columns from your CSV to the fields in Cortex CRM.</p>
                 <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
                     @for(header of uiService.csvHeaders(); track header) {
                         <div class="grid grid-cols-2 gap-4 items-center">
-                            <span class="font-medium text-gray-200">{{header}}</span>
-                            <select (change)="updateMapping(header, $any($event.target).value)" class="block w-full pl-3 pr-10 py-2 text-base bg-gray-700 text-gray-200 border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <span class="font-medium" [class]="themeService.c('text-primary')">{{header}}</span>
+                            <select (change)="updateMapping(header, $any($event.target).value)" class="block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                                 <option value="">- Ignore this column -</option>
                                 @for(field of targetFields(); track field) {
                                     <option [value]="field">{{field}}</option>
@@ -54,9 +55,9 @@ import { AuthService } from '../../../services/auth.service';
                         </div>
                     }
                 </div>
-                 <div class="mt-6 pt-4 border-t border-gray-700 flex justify-between items-center">
-                    <button (click)="uiService.importStep.set('upload')" class="text-sm font-medium text-gray-300 hover:text-gray-100">&larr; Back</button>
-                    <button (click)="importData()" [disabled]="!isMappingValid()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Import Data</button>
+                 <div class="mt-6 pt-4 border-t flex justify-between items-center" [class]="themeService.c('border-primary')">
+                    <button (click)="uiService.importStep.set('upload')" class="text-sm font-medium" [class]="themeService.c('text-base') + ' ' + themeService.c('hover:text-primary')">&larr; Back</button>
+                    <button (click)="importData()" [disabled]="!isMappingValid()" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled')">Import Data</button>
                 </div>
             </div>
           }
@@ -70,6 +71,7 @@ export class ImportModalComponent {
   uiService = inject(UiService);
   dataService = inject(DataService);
   authService = inject(AuthService);
+  themeService = inject(ThemeService);
 
   targetFields = computed(() => {
     switch (this.uiService.importTarget()) {

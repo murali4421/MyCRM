@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { Opportunity, OpportunityStage, User } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 interface SalesReportKpis {
   totalRevenue: number;
@@ -14,18 +15,18 @@ interface SalesReportKpis {
 
 @Component({
   selector: 'app-reports',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, DecimalPipe],
   template: `
     <div>
-      <h1 class="text-3xl font-bold text-gray-100 mb-6">Reports</h1>
-      <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700">
-        <div class="p-4 border-b border-gray-700">
-          <h2 class="text-xl font-semibold text-gray-100">Sales Performance</h2>
+      <h1 class="text-3xl font-bold mb-6" [class]="themeService.c('text-primary')">Reports</h1>
+      <div class="rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+        <div class="p-4 border-b" [class]="themeService.c('border-primary')">
+          <h2 class="text-xl font-semibold" [class]="themeService.c('text-primary')">Sales Performance</h2>
         </div>
-        <div class="p-4 flex flex-col sm:flex-row gap-4 border-b border-gray-700 bg-gray-900/50">
+        <div class="p-4 flex flex-col sm:flex-row gap-4 border-b" [class]="themeService.c('border-primary') + ' ' + themeService.c('bg-base')">
           <div>
-            <label class="block text-sm font-medium text-gray-400">Date Range</label>
-            <select [(ngModel)]="dateRange" class="mt-1 bg-gray-700 text-gray-200 border border-gray-600 rounded-md py-2 px-3 text-sm">
+            <label class="block text-sm font-medium" [class]="themeService.c('text-secondary')">Date Range</label>
+            <select [(ngModel)]="dateRange" class="mt-1 border rounded-md py-2 px-3 text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               <option value="all">All Time</option>
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
@@ -33,8 +34,8 @@ interface SalesReportKpis {
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-400">Sales Rep</label>
-            <select [(ngModel)]="selectedOwner" class="mt-1 bg-gray-700 text-gray-200 border border-gray-600 rounded-md py-2 px-3 text-sm">
+            <label class="block text-sm font-medium" [class]="themeService.c('text-secondary')">Sales Rep</label>
+            <select [(ngModel)]="selectedOwner" class="mt-1 border rounded-md py-2 px-3 text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               <option value="all">All Reps</option>
               @for(user of salesReps(); track user.id) {
                 <option [value]="user.id">{{ user.name }}</option>
@@ -45,47 +46,47 @@ interface SalesReportKpis {
         
         <div class="p-6">
            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-gray-900 p-5 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-400">Total Revenue</h3>
-                    <p class="text-3xl font-bold text-emerald-400 mt-1">{{ kpis().totalRevenue | currency }}</p>
+                <div class="p-5 rounded-lg" [class]="themeService.c('bg-base')">
+                    <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Total Revenue</h3>
+                    <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-success')">{{ kpis().totalRevenue | currency }}</p>
                 </div>
-                <div class="bg-gray-900 p-5 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-400">Deals Won</h3>
-                    <p class="text-3xl font-bold text-gray-100 mt-1">{{ kpis().dealsWon }}</p>
+                <div class="p-5 rounded-lg" [class]="themeService.c('bg-base')">
+                    <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Deals Won</h3>
+                    <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-primary')">{{ kpis().dealsWon }}</p>
                 </div>
-                <div class="bg-gray-900 p-5 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-400">Average Deal Size</h3>
-                    <p class="text-3xl font-bold text-gray-100 mt-1">{{ kpis().averageDealSize | currency }}</p>
+                <div class="p-5 rounded-lg" [class]="themeService.c('bg-base')">
+                    <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Average Deal Size</h3>
+                    <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-primary')">{{ kpis().averageDealSize | currency }}</p>
                 </div>
-                 <div class="bg-gray-900 p-5 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-400">Avg. Sales Cycle</h3>
-                    <p class="text-3xl font-bold text-gray-100 mt-1">{{ kpis().salesCycleDays | number:'1.0-0' }} days</p>
+                 <div class="p-5 rounded-lg" [class]="themeService.c('bg-base')">
+                    <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Avg. Sales Cycle</h3>
+                    <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-primary')">{{ kpis().salesCycleDays | number:'1.0-0' }} days</p>
                 </div>
            </div>
 
            <div class="mt-8">
-                <h3 class="text-lg font-semibold text-gray-100 mb-4">Won Opportunities</h3>
+                <h3 class="text-lg font-semibold mb-4" [class]="themeService.c('text-primary')">Won Opportunities</h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full">
-                        <thead class="bg-gray-900/50">
+                        <thead [class]="themeService.c('bg-base')">
                             <tr>
-                                <th class="px-4 py-2 border-b-2 border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase">Opportunity</th>
-                                <th class="px-4 py-2 border-b-2 border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase">Company</th>
-                                <th class="px-4 py-2 border-b-2 border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase">Value</th>
-                                <th class="px-4 py-2 border-b-2 border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase">Close Date</th>
+                                <th class="px-4 py-2 border-b-2 text-left text-xs font-semibold uppercase" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Opportunity</th>
+                                <th class="px-4 py-2 border-b-2 text-left text-xs font-semibold uppercase" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Company</th>
+                                <th class="px-4 py-2 border-b-2 text-left text-xs font-semibold uppercase" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Value</th>
+                                <th class="px-4 py-2 border-b-2 text-left text-xs font-semibold uppercase" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Close Date</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-700">
+                        <tbody class="divide-y" [class]="themeService.c('border-primary')">
                             @for(opp of reportData(); track opp.id) {
-                                <tr class="hover:bg-gray-700/30">
-                                    <td class="px-4 py-3 text-sm font-medium text-gray-100">{{ opp.name }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getCompanyById(opp.companyId)?.name }}</td>
-                                    <td class="px-4 py-3 text-sm font-semibold text-emerald-400">{{ opp.value | currency }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-300">{{ opp.closeDate | date:'mediumDate' }}</td>
+                                <tr [class]="themeService.c('bg-primary-hover-subtle')">
+                                    <td class="px-4 py-3 text-sm font-medium" [class]="themeService.c('text-primary')">{{ opp.name }}</td>
+                                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{ dataService.getCompanyById(opp.companyId)?.name }}</td>
+                                    <td class="px-4 py-3 text-sm font-semibold" [class]="themeService.c('text-success')">{{ opp.value | currency }}</td>
+                                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{ opp.closeDate | date:'mediumDate' }}</td>
                                 </tr>
                             }
                             @empty {
-                                <tr><td colspan="4" class="text-center py-8 text-gray-500">No data for selected filters.</td></tr>
+                                <tr><td colspan="4" class="text-center py-8" [class]="themeService.c('text-tertiary')">No data for selected filters.</td></tr>
                             }
                         </tbody>
                     </table>
@@ -100,6 +101,7 @@ interface SalesReportKpis {
 export class ReportsComponent {
   dataService = inject(DataService);
   authService = inject(AuthService);
+  themeService = inject(ThemeService);
 
   dateRange = 'all';
   selectedOwner = 'all';

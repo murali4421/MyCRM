@@ -5,6 +5,7 @@ import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { OpportunityStage, AppView, Contact, Opportunity, Task, Activity, User } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,21 +14,22 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <div>
       @if(authService.isPlanExpired()) {
-        <div class="bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 rounded-lg p-4 mb-6 flex items-center justify-between">
+        <div class="rounded-lg p-4 mb-6 flex items-center justify-between border"
+             [class]="themeService.c('bg-warning-subtle') + ' ' + themeService.c('border-warning-subtle') + ' ' + themeService.c('text-warning')">
             <div>
                 <h3 class="font-bold">Your Plan Has Expired</h3>
                 <p class="text-sm">Please upgrade your plan to restore full access to all features.</p>
             </div>
-            <button (click)="activatePlan()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium whitespace-nowrap">
+            <button (click)="activatePlan()" class="px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('text-on-accent')">
                 Activate Plan
             </button>
         </div>
       }
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
           <div class="flex items-center space-x-2">
-            <h1 class="text-3xl font-bold text-gray-100">Dashboard</h1>
+            <h1 class="text-3xl font-bold" [class]="themeService.c('text-primary')">Dashboard</h1>
             @if (lastRefreshed()) {
-              <div class="flex items-center text-xs text-gray-400 pt-2">
+              <div class="flex items-center text-xs pt-2" [class]="themeService.c('text-secondary')">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M5.29 9.29a7.5 7.5 0 0110.42 0M19 20v-5h-5m-1.29-4.29a7.5 7.5 0 01-10.42 0" />
                 </svg>
@@ -36,7 +38,7 @@ import { AuthService } from '../../services/auth.service';
             }
           </div>
           <div class="flex items-center gap-2">
-            <select [ngModel]="selectedPeriod()" (ngModelChange)="selectedPeriod.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            <select [ngModel]="selectedPeriod()" (ngModelChange)="selectedPeriod.set($event)" class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm" [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                 <option value="all">All Time</option>
                 <option value="30d">Last 30 Days</option>
                 <option value="90d">Last 90 Days</option>
@@ -46,38 +48,38 @@ import { AuthService } from '../../services/auth.service';
       
       <!-- KPIs -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-700">
-          <h3 class="text-sm font-medium text-gray-400">Pipeline Value</h3>
-          <p class="text-3xl font-bold text-gray-100 mt-1">{{ kpis().pipelineValue | currency }}</p>
+        <div class="p-5 rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+          <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Pipeline Value</h3>
+          <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-primary')">{{ kpis().pipelineValue | currency }}</p>
         </div>
-        <div class="bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-700">
-          <h3 class="text-sm font-medium text-gray-400">Opportunities</h3>
-          <p class="text-3xl font-bold text-gray-100 mt-1">{{ kpis().opportunitiesCount }}</p>
+        <div class="p-5 rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+          <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Opportunities</h3>
+          <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-primary')">{{ kpis().opportunitiesCount }}</p>
         </div>
-        <div class="bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-700">
-          <h3 class="text-sm font-medium text-gray-400">Win Rate</h3>
-          <p class="text-3xl font-bold text-emerald-400 mt-1">{{ kpis().winRate | percent:'1.0-0' }}</p>
+        <div class="p-5 rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+          <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Win Rate</h3>
+          <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-success')">{{ kpis().winRate | percent:'1.0-0' }}</p>
         </div>
-        <div class="bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-700">
-          <h3 class="text-sm font-medium text-gray-400">Revenue Won</h3>
-          <p class="text-3xl font-bold text-emerald-400 mt-1">{{ kpis().revenueWon | currency }}</p>
+        <div class="p-5 rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+          <h3 class="text-sm font-medium" [class]="themeService.c('text-secondary')">Revenue Won</h3>
+          <p class="text-3xl font-bold mt-1" [class]="themeService.c('text-success')">{{ kpis().revenueWon | currency }}</p>
         </div>
       </div>
 
       <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <!-- Sales Pipeline -->
-        <div class="lg:col-span-2 bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-100 mb-4">Sales Pipeline</h3>
+        <div class="lg:col-span-2 p-6 rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+            <h3 class="text-lg font-semibold mb-4" [class]="themeService.c('text-primary')">Sales Pipeline</h3>
             <div class="space-y-4">
                 @for(stage of pipelineStages(); track stage.name) {
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-sm font-medium text-gray-300">{{ stage.name }}</span>
-                            <span class="text-sm text-gray-400">{{ stage.value | currency:'USD':'symbol':'1.0-0' }}</span>
+                            <span class="text-sm font-medium" [class]="themeService.c('text-base')">{{ stage.name }}</span>
+                            <span class="text-sm" [class]="themeService.c('text-secondary')">{{ stage.value | currency:'USD':'symbol':'1.0-0' }}</span>
                         </div>
-                        <div class="bg-gray-700 rounded-full h-2.5">
-                            <div class="bg-indigo-500 h-2.5 rounded-full" [style.width.%]="stage.percentage"></div>
+                        <div class="rounded-full h-2.5" [class]="themeService.c('bg-secondary')">
+                            <div class="h-2.5 rounded-full" [class]="themeService.c('bg-accent')" [style.width.%]="stage.percentage"></div>
                         </div>
                     </div>
                 }
@@ -85,17 +87,17 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         <!-- Recent Activities -->
-        <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-100 p-4 border-b border-gray-700">Recent Activities</h3>
-            <ul class="divide-y divide-gray-700 max-h-96 overflow-y-auto">
+        <div class="rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+            <h3 class="text-lg font-semibold p-4 border-b" [class]="themeService.c('text-primary') + ' ' + themeService.c('border-primary')">Recent Activities</h3>
+            <ul class="divide-y max-h-96 overflow-y-auto" [class]="themeService.c('border-primary')">
                 @for(activity of recentActivities(); track activity.id) {
-                    <li class="p-4 hover:bg-gray-700/50">
-                        <p class="text-sm font-medium text-gray-200">{{ activity.subject }}</p>
-                        <p class="text-xs text-gray-400">{{ activity.type }} by {{ dataService.getUserById(activity.ownerId)?.name }} - {{ timeAgo(activity.startTime) }}</p>
+                    <li class="p-4" [class]="themeService.c('bg-primary-hover-subtle')">
+                        <p class="text-sm font-medium" [class]="themeService.c('text-primary')">{{ activity.subject }}</p>
+                        <p class="text-xs" [class]="themeService.c('text-secondary')">{{ activity.type }} by {{ dataService.getUserById(activity.ownerId)?.name }} - {{ timeAgo(activity.startTime) }}</p>
                     </li>
                 }
                 @empty {
-                   <li class="p-4 text-center text-sm text-gray-500">No recent activities.</li>
+                   <li class="p-4 text-center text-sm" [class]="themeService.c('text-tertiary')">No recent activities.</li>
                 }
             </ul>
         </div>
@@ -108,6 +110,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   authService = inject(AuthService);
   dataService = inject(DataService);
   uiService = inject(UiService);
+  themeService = inject(ThemeService);
   private datePipe = inject(DatePipe);
   
   lastRefreshed = signal<Date | null>(null);

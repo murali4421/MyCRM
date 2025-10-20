@@ -4,6 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { EmailTemplate } from '../../../models/crm.models';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
+import { ThemeService } from '../../../services/theme.service';
 
 declare var Quill: any;
 
@@ -13,28 +14,28 @@ declare var Quill: any;
   template: `
     <div class="fixed inset-0 bg-black/30 z-40" (click)="uiService.closeTemplateEditor()"></div>
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-        <header class="p-4 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
-            <h2 class="text-xl font-semibold text-gray-100">{{ isNew ? 'New Template' : 'Edit Template' }}</h2>
-            <button (click)="uiService.closeTemplateEditor()" class="p-2 rounded-full hover:bg-gray-700">
-              <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      <div class="rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]" [class]="themeService.c('bg-primary')">
+        <header class="p-4 border-b flex justify-between items-center flex-shrink-0" [class]="themeService.c('border-primary')">
+            <h2 class="text-xl font-semibold" [class]="themeService.c('text-primary')">{{ isNew ? 'New Template' : 'Edit Template' }}</h2>
+            <button (click)="uiService.closeTemplateEditor()" class="p-2 rounded-full" [class]="themeService.c('bg-primary-hover')">
+              <svg class="h-6 w-6" [class]="themeService.c('text-secondary')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </header>
         <div class="p-6 overflow-y-auto">
            <form #templateForm="ngForm" (ngSubmit)="saveTemplate(templateForm)">
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-300">Template Name</label>
-                  <input type="text" name="name" [ngModel]="templateModel()?.name" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                  <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Template Name</label>
+                  <input type="text" name="name" [ngModel]="templateModel()?.name" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
                 </div>
                  <div>
-                  <label class="block text-sm font-medium text-gray-300">Subject</label>
-                  <input type="text" name="subject" [ngModel]="templateModel()?.subject" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                  <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Subject</label>
+                  <input type="text" name="subject" [ngModel]="templateModel()?.subject" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
                 </div>
                 <div>
                    <div class="flex justify-between items-center mb-2">
-                      <label for="template-body-editor" class="block text-sm font-medium text-gray-300">Body</label>
-                      <select #placeholderSelect (change)="insertPlaceholder(placeholderSelect.value); placeholderSelect.value=''" class="text-sm bg-gray-700 text-gray-200 border-gray-600 rounded-md py-1 pl-2 pr-8 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                      <label for="template-body-editor" class="block text-sm font-medium" [class]="themeService.c('text-base')">Body</label>
+                      <select #placeholderSelect (change)="insertPlaceholder(placeholderSelect.value); placeholderSelect.value=''" class="text-sm rounded-md py-1 pl-2 pr-8" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                           <option value="" disabled selected>Insert Placeholder...</option>
                           <option [value]="'{{contact.name}}'">Contact Name</option>
                           <option [value]="'{{company.name}}'">Company Name</option>
@@ -47,9 +48,9 @@ declare var Quill: any;
                   <div #editor id="template-body-editor"></div>
                 </div>
               </div>
-              <div class="mt-8 pt-4 border-t border-gray-700 flex justify-end gap-2">
-                <button type="button" (click)="uiService.closeTemplateEditor()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
-                <button type="submit" [disabled]="templateForm.invalid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Template</button>
+              <div class="mt-8 pt-4 border-t flex justify-end gap-2" [class]="themeService.c('border-primary')">
+                <button type="button" (click)="uiService.closeTemplateEditor()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
+                <button type="submit" [disabled]="templateForm.invalid" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled')">Save Template</button>
               </div>
            </form>
         </div>
@@ -102,6 +103,7 @@ declare var Quill: any;
 export class EmailTemplateModalComponent implements AfterViewInit {
   dataService = inject(DataService);
   uiService = inject(UiService);
+  themeService = inject(ThemeService);
 
   isNew = false;
   templateModel = signal<Partial<EmailTemplate>>({});

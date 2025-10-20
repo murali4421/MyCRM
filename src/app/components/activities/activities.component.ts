@@ -7,6 +7,7 @@ import { Activity } from '../../models/crm.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
 import { GeminiService } from '../../services/gemini.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-activities',
@@ -14,30 +15,30 @@ import { GeminiService } from '../../services/gemini.service';
   template: `
     <div>
       <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-          <h1 class="text-3xl font-bold text-gray-100">Activities</h1>
+          <h1 class="text-3xl font-bold" [class]="themeService.c('text-primary')">Activities</h1>
            <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center space-x-1 bg-gray-700 rounded-md p-1 text-sm font-medium w-full sm:w-auto">
+            <div class="rounded-md p-1 text-sm font-medium w-full sm:w-auto" [class]="themeService.c('bg-secondary')">
               <button 
                 (click)="viewMode.set('feed')" 
-                [class]="viewMode() === 'feed' ? 'bg-gray-900 text-gray-100 shadow-sm' : 'bg-transparent text-gray-400'" 
+                [class]="viewMode() === 'feed' ? themeService.c('bg-base') + ' ' + themeService.c('text-primary') + ' shadow-sm' : themeService.c('bg-transparent') + ' ' + themeService.c('text-secondary')" 
                 class="px-3 py-1 rounded-md transition-colors">
                 Feed
               </button>
               <button 
                 (click)="viewMode.set('table')" 
-                [class]="viewMode() === 'table' ? 'bg-gray-900 text-gray-100 shadow-sm' : 'bg-transparent text-gray-400'" 
+                [class]="viewMode() === 'table' ? themeService.c('bg-base') + ' ' + themeService.c('text-primary') + ' shadow-sm' : themeService.c('bg-transparent') + ' ' + themeService.c('text-secondary')" 
                 class="px-3 py-1 rounded-md transition-colors">
                 Table
               </button>
             </div>
-            <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
+            <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)" class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto" [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
               <option value="all">All Types</option>
               <option value="Call summary">Call summary</option>
               <option value="Email">Email</option>
               <option value="Meeting">Meeting</option>
               <option value="Note">Note</option>
             </select>
-            <select [ngModel]="ownerFilter()" (ngModelChange)="ownerFilter.set($event)" class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
+            <select [ngModel]="ownerFilter()" (ngModelChange)="ownerFilter.set($event)" class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto" [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
               <option value="all">All Owners</option>
               @for(user of dataService.users(); track user.id) {
                 <option [value]="user.id">{{ user.name }}</option>
@@ -48,42 +49,42 @@ import { GeminiService } from '../../services/gemini.service';
               placeholder="Search activities..." 
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
-              class="bg-gray-800 text-gray-200 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm w-full sm:w-auto">
-            <button (click)="startAdding()" [disabled]="isAdding()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:opacity-50">Log Activity</button>
+              class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto"
+              [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('placeholder-text')">
+            <button (click)="startAdding()" [disabled]="isAdding()" class="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('text-on-accent')">Log Activity</button>
           </div>
       </div>
       
       @if (isAdding()) {
-        <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-4 mb-4">
-          <h3 class="text-lg font-semibold text-gray-100 mb-4">Log New Activity</h3>
+        <div class="rounded-lg shadow-sm border p-4 mb-4" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+          <h3 class="text-lg font-semibold mb-4" [class]="themeService.c('text-primary')">Log New Activity</h3>
           <form #newActivityForm="ngForm" (ngSubmit)="saveNewActivity(newActivityForm)">
             <div class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                  <label class="block text-sm font-medium text-gray-300">Type</label>
-                  <select name="type" [ngModel]="newActivity().type" (ngModelChange)="updateNewActivityField('type', $event)" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
-                    <option>Call summary</option>
-                    <option>Email</option>
-                    <option>Meeting</option>
-                    <option>Note</option>
+                  <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Type</label>
+                  <select name="type" [ngModel]="newActivity().type" (ngModelChange)="updateNewActivityField('type', $event)" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
+                    @for (type of activityTypes; track type) {
+                      <option [value]="type">{{type}}</option>
+                    }
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-300">Date & Time</label>
-                  <input type="datetime-local" name="startTime" [ngModel]="newActivity().startTime" (ngModelChange)="updateNewActivityField('startTime', $event)" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                  <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Date & Time</label>
+                  <input type="datetime-local" name="startTime" [ngModel]="newActivity().startTime" (ngModelChange)="updateNewActivityField('startTime', $event)" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-300">Subject</label>
-                <input type="text" name="subject" [ngModel]="newActivity().subject" (ngModelChange)="updateNewActivityField('subject', $event)" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Subject</label>
+                <input type="text" name="subject" [ngModel]="newActivity().subject" (ngModelChange)="updateNewActivityField('subject', $event)" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-300">Description / Notes</label>
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Description / Notes</label>
                  <div class="relative">
-                    <textarea name="description" [ngModel]="newActivity().description" (ngModelChange)="updateNewActivityField('description', $event)" rows="3" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm"></textarea>
-                    <button type="button" (click)="generateSummary()" [disabled]="geminiService.isGeneratingSummary() || !newActivity().description" class="absolute bottom-2 right-2 bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-md hover:bg-indigo-500/20 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                    <textarea name="description" [ngModel]="newActivity().description" (ngModelChange)="updateNewActivityField('description', $event)" rows="3" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')"></textarea>
+                    <button type="button" (click)="generateSummary()" [disabled]="geminiService.isGeneratingSummary() || !newActivity().description" class="absolute bottom-2 right-2 px-3 py-1.5 rounded-md text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap" [class]="themeService.c('bg-accent-subtle') + ' ' + themeService.c('text-accent-subtle') + ' ' + themeService.c('hover:bg-accent-subtle-hover')">
                         @if (geminiService.isGeneratingSummary()) {
-                          <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                          <div class="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
                         } @else {
                           <span>✨ Summarize</span>
                         }
@@ -91,9 +92,9 @@ import { GeminiService } from '../../services/gemini.service';
                 </div>
               </div>
             </div>
-            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
-              <button type="button" (click)="cancelAdd()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
-              <button type="submit" [disabled]="!newActivityForm.valid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Activity</button>
+            <div class="flex justify-end gap-2 mt-4 pt-4 border-t" [class]="themeService.c('border-primary')">
+              <button type="button" (click)="cancelAdd()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
+              <button type="submit" [disabled]="!newActivityForm.valid" class="px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">Save Activity</button>
             </div>
           </form>
         </div>
@@ -101,19 +102,19 @@ import { GeminiService } from '../../services/gemini.service';
       
       @if (viewMode() === 'feed') {
         <!-- Activity Feed View -->
-        <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700">
+        <div class="rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
           <div class="flow-root p-6">
             <ul role="list" class="-mb-8">
               @for (activity of paginatedActivities(); track activity.id; let isLast = $last) {
                 <li>
                   <div class="relative pb-8">
                     @if(!isLast) {
-                      <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-700" aria-hidden="true"></span>
+                      <span class="absolute top-4 left-4 -ml-px h-full w-0.5" [class]="themeService.c('bg-secondary')" aria-hidden="true"></span>
                     }
                     <div class="relative flex space-x-3 cursor-pointer" (click)="editActivity(activity)">
                       <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-gray-800"
-                              [class]="getIconBgColor(activity.type)">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8"
+                              [class]="getIconBgColor(activity.type) + ' ' + 'ring-slate-800'">
                           <svg class="h-5 w-5 text-white" 
                               xmlns="http://www.w3.org/2000/svg" 
                               fill="none" 
@@ -126,19 +127,19 @@ import { GeminiService } from '../../services/gemini.service';
                       </div>
                       <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                         <div>
-                          <p class="text-sm text-gray-400">
-                            <span class="font-medium text-gray-50">{{ activity.subject }}</span>
+                          <p class="text-sm" [class]="themeService.c('text-secondary')">
+                            <span class="font-medium" [class]="themeService.c('text-primary')">{{ activity.subject }}</span>
                             by {{ dataService.getUserById(activity.ownerId)?.name }}
                           </p>
-                          <p class="text-sm text-gray-300 mt-1">{{ activity.description }}</p>
+                          <p class="text-sm mt-1" [class]="themeService.c('text-base')">{{ activity.description }}</p>
                           @if(activity.relatedEntity) {
-                            <p class="text-xs text-gray-500 mt-1">Related to: {{ dataService.getRelatedEntityName(activity.relatedEntity) }}</p>
+                            <p class="text-xs mt-1" [class]="themeService.c('text-tertiary')">Related to: {{ dataService.getRelatedEntityName(activity.relatedEntity) }}</p>
                           }
                         </div>
-                        <div class="text-right text-sm whitespace-nowrap text-gray-400">
+                        <div class="text-right text-sm whitespace-nowrap" [class]="themeService.c('text-secondary')">
                           <time [dateTime]="activity.startTime">{{ activity.startTime | date:'short' }}</time>
                           <div class="mt-2 flex space-x-2 justify-end">
-                            <button (click)="$event.stopPropagation(); deleteActivity(activity.id)" class="text-red-500 hover:text-red-400 font-medium text-xs">Delete</button>
+                            <button (click)="$event.stopPropagation(); deleteActivity(activity.id)" class="font-medium text-xs" [class]="themeService.c('text-danger') + ' ' + themeService.c('hover:text-danger-hover')">Delete</button>
                           </div>
                         </div>
                       </div>
@@ -147,41 +148,41 @@ import { GeminiService } from '../../services/gemini.service';
                 </li>
               }
               @empty {
-                <li class="text-center py-8 text-gray-400">No activities found.</li>
+                <li class="text-center py-8" [class]="themeService.c('text-secondary')">No activities found.</li>
               }
             </ul>
           </div>
         </div>
       } @else {
         <!-- Activity Table View -->
-        <div class="bg-gray-800 rounded-lg shadow-sm border border-gray-700 overflow-x-auto">
+        <div class="rounded-lg shadow-sm border overflow-x-auto" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
           <table class="min-w-full">
-            <thead class="bg-gray-900">
+            <thead [class]="themeService.c('bg-base')">
               <tr>
-                <th class="px-4 py-3 border-b border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</th>
-                <th class="px-4 py-3 border-b border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Subject</th>
-                <th class="px-4 py-3 border-b border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Owner</th>
-                <th class="px-4 py-3 border-b border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Related To</th>
-                <th class="px-4 py-3 border-b border-gray-700 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                <th class="px-4 py-3 border-b border-gray-700"></th>
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Type</th>
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Subject</th>
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Owner</th>
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Related To</th>
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">Date</th>
+                <th class="px-4 py-3 border-b" [class]="themeService.c('border-primary')"></th>
               </tr>
             </thead>
-              <tbody class="bg-gray-800 divide-y divide-gray-700">
+              <tbody class="divide-y" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
                 @for (activity of paginatedActivities(); track activity.id) {
-                  <tr class="hover:bg-gray-700 cursor-pointer" (click)="editActivity(activity)">
-                    <td class="px-4 py-3 text-sm text-gray-300"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getBadgeClasses(activity.type)">{{ activity.type }}</span></td>
-                    <td class="px-4 py-3 text-sm font-medium text-gray-100">{{ activity.subject }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-300">{{ dataService.getUserById(activity.ownerId)?.name }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-300">{{ activity.relatedEntity ? dataService.getRelatedEntityName(activity.relatedEntity) : 'N/A' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">{{ activity.startTime | date:'medium' }}</td>
+                  <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="editActivity(activity)">
+                    <td class="px-4 py-3 text-sm"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getBadgeClasses(activity.type)">{{ activity.type }}</span></td>
+                    <td class="px-4 py-3 text-sm font-medium" [class]="themeService.c('text-primary')">{{ activity.subject }}</td>
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{ dataService.getUserById(activity.ownerId)?.name }}</td>
+                    <td class="px-4 py-3 text-sm" [class]="themeService.c('text-base')">{{ activity.relatedEntity ? dataService.getRelatedEntityName(activity.relatedEntity) : 'N/A' }}</td>
+                    <td class="px-4 py-3 text-sm whitespace-nowrap" [class]="themeService.c('text-base')">{{ activity.startTime | date:'medium' }}</td>
                     <td class="px-4 py-3 text-sm text-right">
-                      <button (click)="$event.stopPropagation(); deleteActivity(activity.id)" class="text-red-500 hover:text-red-400 font-medium">Delete</button>
+                      <button (click)="$event.stopPropagation(); deleteActivity(activity.id)" class="font-medium" [class]="themeService.c('text-danger') + ' ' + themeService.c('hover:text-danger-hover')">Delete</button>
                     </td>
                   </tr>
                 }
                 @empty {
                   <tr>
-                    <td colspan="6" class="text-center py-8 text-gray-400">No activities found.</td>
+                    <td colspan="6" class="text-center py-8" [class]="themeService.c('text-secondary')">No activities found.</td>
                   </tr>
                 }
               </tbody>
@@ -191,10 +192,10 @@ import { GeminiService } from '../../services/gemini.service';
 
        <!-- Pagination Controls -->
       @if (totalPages() > 0 && sortedActivities().length > 0) {
-        <div class="flex items-center justify-between py-3 px-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
+        <div class="flex items-center justify-between py-3 px-4 border-t rounded-b-lg" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
           <div class="w-full flex flex-col sm:flex-row items-center sm:justify-between gap-4">
             <div>
-              <p class="text-sm text-gray-300">
+              <p class="text-sm" [class]="themeService.c('text-base')">
                 Showing
                 <span class="font-medium">{{ startItemNumber() }}</span>
                 to
@@ -205,19 +206,19 @@ import { GeminiService } from '../../services/gemini.service';
               </p>
             </div>
             <div class="flex items-center space-x-4">
-               <select [ngModel]="itemsPerPage()" (ngModelChange)="changeItemsPerPage($event)" class="p-2 border rounded-md bg-gray-700 text-gray-200 border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+               <select [ngModel]="itemsPerPage()" (ngModelChange)="changeItemsPerPage($event)" class="p-2 border rounded-md focus:outline-none text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-2') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                   <option value="10">10 per page</option>
                   <option value="25">25 per page</option>
                   <option value="50">50 per page</option>
                </select>
               <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
+                <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium disabled:opacity-50" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')">
                   <span class="sr-only">Previous</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 </button>
-                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> Page {{ currentPage() }} of {{ totalPages() }} </span>
-                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300"> {{ currentPage() }} / {{ totalPages() }} </span>
-                <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50">
+                <span class="hidden sm:inline-flex relative items-center px-4 py-2 border text-sm font-medium" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-base')"> Page {{ currentPage() }} of {{ totalPages() }} </span>
+                <span class="inline-flex sm:hidden relative items-center px-4 py-2 border text-sm font-medium" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-base')"> {{ currentPage() }} / {{ totalPages() }} </span>
+                <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium disabled:opacity-50" [class]="themeService.c('border-secondary') + ' ' + themeService.c('bg-primary') + ' ' + themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')">
                   <span class="sr-only">Next</span>
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                 </button>
@@ -235,6 +236,7 @@ export class ActivitiesComponent {
   uiService = inject(UiService);
   authService = inject(AuthService);
   geminiService = inject(GeminiService);
+  themeService = inject(ThemeService);
   private sanitizer: DomSanitizer = inject(DomSanitizer);
 
   // View and Filter State
@@ -244,6 +246,8 @@ export class ActivitiesComponent {
   ownerFilter = signal<string>('all');
   isAdding = signal(false);
   newActivity = signal<Partial<Activity>>({});
+
+  activityTypes: Activity['type'][] = ['Call summary', 'Email', 'Meeting', 'Note'];
 
   constructor() {
     effect(() => {
@@ -393,12 +397,12 @@ export class ActivitiesComponent {
 
   getBadgeClasses(type: Activity['type']): string {
     const classMap: { [key: string]: string } = {
-        'Call summary': 'bg-amber-500/10 text-amber-300',
-        'Email': 'bg-sky-500/10 text-sky-300',
-        'Meeting': 'bg-violet-500/10 text-violet-300',
-        'Note': 'bg-gray-500/10 text-gray-300'
+        'Call summary': this.themeService.c('bg-warning-subtle') + ' ' + this.themeService.c('text-warning'),
+        'Email': this.themeService.c('bg-info-subtle') + ' ' + this.themeService.c('text-info'),
+        'Meeting': this.themeService.c('bg-special-subtle') + ' ' + this.themeService.c('text-special'),
+        'Note': this.themeService.c('bg-secondary') + ' ' + this.themeService.c('text-base')
     };
-    return classMap[type] || 'bg-gray-500/10 text-gray-300';
+    return classMap[type];
   }
 
   getIconPath(type: Activity['type']): SafeHtml {

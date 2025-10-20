@@ -6,16 +6,17 @@ import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { AuthService } from '../../../services/auth.service';
 import { GeminiService } from '../../../services/gemini.service';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-contact-modal',
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 bg-black/30 z-40" (click)="uiService.closeContactModal()"></div>
-    <div class="fixed inset-y-0 right-0 w-full max-w-xl bg-gray-800 z-50 flex flex-col">
-      <header class="p-4 border-b border-gray-700 flex justify-between items-center">
+    <div class="fixed inset-y-0 right-0 w-full max-w-xl z-50 flex flex-col" [class]="themeService.c('bg-primary')">
+      <header class="p-4 border-b flex justify-between items-center" [class]="themeService.c('border-primary')">
         <div class="flex items-center space-x-3">
-          <h2 class="text-xl font-semibold text-gray-100">{{ isNew ? 'New Contact' : 'Contact Details' }}</h2>
+          <h2 class="text-xl font-semibold" [class]="themeService.c('text-primary')">{{ isNew ? 'New Contact' : 'Contact Details' }}</h2>
           @if (!isNew && contactModel().leadScore) {
             <span
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -23,19 +24,19 @@ import { GeminiService } from '../../../services/gemini.service';
             >
               {{ contactModel().leadScore }} Lead
             </span>
-             <button type="button" (click)="generateAndSaveLeadScore(contactModel()!)" [disabled]="geminiService.isGeneratingLeadScore()" class="p-1 rounded-full hover:bg-gray-700 disabled:opacity-50" title="Refresh lead score">
+             <button type="button" (click)="generateAndSaveLeadScore(contactModel()!)" [disabled]="geminiService.isGeneratingLeadScore()" class="p-1 rounded-full disabled:opacity-50" [class]="themeService.c('bg-primary-hover')" title="Refresh lead score">
                 @if(geminiService.isGeneratingLeadScore() && isRescoring()) {
-                    <div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div class="w-4 h-4 border-2 rounded-full animate-spin" [class]="themeService.c('border-secondary') + ' border-t-transparent'"></div>
                 } @else {
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" [class]="themeService.c('text-secondary')" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                     </svg>
                 }
             </button>
           }
         </div>
-        <button (click)="uiService.closeContactModal()" class="p-2 rounded-full hover:bg-gray-700">
-          <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        <button (click)="uiService.closeContactModal()" class="p-2 rounded-full" [class]="themeService.c('bg-primary-hover')">
+          <svg class="h-6 w-6" [class]="themeService.c('text-secondary')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </header>
 
@@ -43,24 +44,24 @@ import { GeminiService } from '../../../services/gemini.service';
         <form #contactForm="ngForm" (ngSubmit)="saveContact(contactForm)">
            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-300">Full Name</label>
-                <input type="text" name="name" [ngModel]="contactModel()?.name" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Full Name</label>
+                <input type="text" name="name" [ngModel]="contactModel()?.name" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-300">Email</label>
-                <input type="email" name="email" [ngModel]="contactModel()?.email" required class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Email</label>
+                <input type="email" name="email" [ngModel]="contactModel()?.email" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-300">Phone</label>
-                <input type="text" name="phone" [ngModel]="contactModel()?.phone" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Phone</label>
+                <input type="text" name="phone" [ngModel]="contactModel()?.phone" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-300">Role in Company</label>
-                <input type="text" name="roleInCompany" [ngModel]="contactModel()?.roleInCompany" class="mt-1 block w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Role in Company</label>
+                <input type="text" name="roleInCompany" [ngModel]="contactModel()?.roleInCompany" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-300">Company</label>
-                <select name="companyId" [ngModel]="contactModel()?.companyId" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-gray-700 text-gray-200 border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Company</label>
+                <select name="companyId" [ngModel]="contactModel()?.companyId" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                     <option value="" disabled>Select a company</option>
                     @for(company of dataService.companies(); track company.id) {
                         <option [value]="company.id">{{company.name}}</option>
@@ -68,8 +69,8 @@ import { GeminiService } from '../../../services/gemini.service';
                 </select>
               </div>
                <div>
-                <label class="block text-sm font-medium text-gray-300">Owner</label>
-                <select name="ownerId" [ngModel]="contactModel()?.ownerId" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-gray-700 text-gray-200 border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Owner</label>
+                <select name="ownerId" [ngModel]="contactModel()?.ownerId" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                     @for(user of dataService.users(); track user.id) {
                         <option [value]="user.id">{{user.name}}</option>
                     }
@@ -79,16 +80,16 @@ import { GeminiService } from '../../../services/gemini.service';
           
             <!-- AI Assistant -->
             @if(!isNew) {
-                <div class="mt-6 pt-6 border-t border-gray-700">
+                <div class="mt-6 pt-6 border-t" [class]="themeService.c('border-primary')">
                     <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-semibold text-gray-100 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
+                        <h3 class="text-lg font-semibold flex items-center" [class]="themeService.c('text-primary')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" [class]="themeService.c('text-accent')" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
                             AI Assistant
                         </h3>
-                         <button type="button" (click)="getAiSuggestion()" [disabled]="geminiService.isGeneratingAction()" class="bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-md hover:bg-indigo-500/20 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                         <button type="button" (click)="getAiSuggestion()" [disabled]="geminiService.isGeneratingAction()" class="px-3 py-1.5 rounded-md text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed" [class]="themeService.c('bg-accent-subtle') + ' ' + themeService.c('text-accent-subtle') + ' ' + themeService.c('hover:bg-accent-subtle-hover')">
                             @if (geminiService.isGeneratingAction()) {
                                 <span class="flex items-center">
-                                    <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    <div class="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2" [class]="themeService.c('border-accent')"></div>
                                     Thinking...
                                 </span>
                             } @else {
@@ -97,20 +98,20 @@ import { GeminiService } from '../../../services/gemini.service';
                         </button>
                     </div>
                      @if (aiSuggestion()) {
-                      <div class="bg-gray-900 p-4 rounded-md border border-gray-700">
-                          <p class="text-sm text-gray-300">{{ aiSuggestion() }}</p>
+                      <div class="p-4 rounded-md border" [class]="themeService.c('bg-base') + ' ' + themeService.c('border-primary')">
+                          <p class="text-sm" [class]="themeService.c('text-base')">{{ aiSuggestion() }}</p>
                       </div>
                     } @else if (!geminiService.isGeneratingAction()) {
-                        <p class="text-sm text-gray-400">Click the button to get a suggestion for your next step with this contact.</p>
+                        <p class="text-sm" [class]="themeService.c('text-secondary')">Click the button to get a suggestion for your next step with this contact.</p>
                     }
                 </div>
             }
 
-           <div class="mt-8 pt-4 border-t border-gray-700 flex justify-end gap-2">
-                <button type="button" (click)="uiService.closeContactModal()" class="bg-gray-700 border border-gray-600 text-gray-200 px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-medium">Cancel</button>
-                <button type="submit" [disabled]="contactForm.invalid" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium disabled:bg-gray-600">Save Contact</button>
+           <div class="mt-8 pt-4 border-t flex justify-end gap-2" [class]="themeService.c('border-primary')">
+                <button type="button" (click)="uiService.closeContactModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
+                <button type="submit" [disabled]="contactForm.invalid" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled')">Save Contact</button>
                  @if(!isNew) {
-                  <button type="button" (click)="deleteContact()" class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-md hover:bg-red-500/20 text-sm font-medium">Delete</button>
+                  <button type="button" (click)="deleteContact()" class="px-4 py-2 rounded-md text-sm font-medium border" [class]="themeService.c('bg-danger-subtle') + ' ' + themeService.c('border-danger-subtle') + ' ' + themeService.c('text-danger') + ' ' + themeService.c('hover:bg-danger-subtle-hover')">Delete</button>
                  }
            </div>
         </form>
@@ -124,6 +125,7 @@ export class ContactModalComponent {
   uiService = inject(UiService);
   authService = inject(AuthService);
   geminiService = inject(GeminiService);
+  themeService = inject(ThemeService);
 
   isNew = false;
   isRescoring = signal(false);
@@ -238,10 +240,10 @@ export class ContactModalComponent {
 
   getLeadScoreBadgeClass(score: 'Hot' | 'Warm' | 'Cold'): string {
     switch (score) {
-      case 'Hot': return 'bg-red-500/10 text-red-400';
-      case 'Warm': return 'bg-amber-500/10 text-amber-300';
-      case 'Cold': return 'bg-sky-500/10 text-sky-300';
-      default: return 'bg-gray-500/10 text-gray-300';
+      case 'Hot': return this.themeService.c('bg-danger-subtle') + ' ' + this.themeService.c('text-danger');
+      case 'Warm': return this.themeService.c('bg-warning-subtle') + ' ' + this.themeService.c('text-warning');
+      case 'Cold': return this.themeService.c('bg-info-subtle') + ' ' + this.themeService.c('text-info');
+      default: return this.themeService.c('bg-secondary') + ' ' + this.themeService.c('text-base');
     }
   }
 }

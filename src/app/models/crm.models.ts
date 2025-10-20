@@ -231,7 +231,7 @@ export type AppView =
   | 'reports';
 
 export type AuthView = 'login' | 'signup';
-export type ProfileView = 'personal-info' | 'password' | 'notifications';
+export type ProfileView = 'personal-info' | 'password' | 'notifications' | 'theme';
 export type UsersAndRolesView = 'users' | 'roles' | 'team';
 export type SuperAdminView = 'dashboard' | 'plans';
 
