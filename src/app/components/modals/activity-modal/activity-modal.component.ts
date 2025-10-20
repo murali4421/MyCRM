@@ -1,4 +1,3 @@
-
 // FIX: Completed the implementation of ActivityModalComponent, which was previously missing/truncated, to resolve the export error.
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -79,6 +78,7 @@ import { ThemeService } from '../../../services/theme.service';
                         <option value="contact">Contact</option>
                         <option value="company">Company</option>
                         <option value="opportunity">Opportunity</option>
+                        <option value="task">Task</option>
                     </select>
                     @if (relatedEntityType() !== 'none') {
                         <select name="relatedEntityId" [ngModel]="activityModel().relatedEntity?.id" [disabled]="isReadonly()" class="block w-2/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
@@ -92,6 +92,9 @@ import { ThemeService } from '../../../services/theme.service';
                                 }
                                 @case ('opportunity') {
                                     @for(opp of dataService.opportunities(); track opp.id) { <option [value]="opp.id">{{ opp.name }}</option> }
+                                }
+                                @case ('task') {
+                                    @for(task of dataService.tasks(); track task.id) { <option [value]="task.id">{{ task.title }}</option> }
                                 }
                             }
                         </select>
@@ -126,7 +129,7 @@ export class ActivityModalComponent {
   isNew = false;
   activityModel = signal<Partial<Activity>>({});
   rawTextForSummary = signal('');
-  relatedEntityType = signal<'contact' | 'company' | 'opportunity' | 'none'>('none');
+  relatedEntityType = signal<'contact' | 'company' | 'opportunity' | 'task' | 'none'>('none');
   isReadonly = computed(() => this.uiService.isModalReadonly());
 
   title = computed(() => {
@@ -193,7 +196,7 @@ export class ActivityModalComponent {
     }
   }
 
-  onEntityTypeChange(form: NgForm, newType: 'contact' | 'company' | 'opportunity' | 'none') {
+  onEntityTypeChange(form: NgForm, newType: 'contact' | 'company' | 'opportunity' | 'task' | 'none') {
     this.relatedEntityType.set(newType);
     this.activityModel.update(model => ({ ...model, relatedEntity: undefined }));
     if (form.controls['relatedEntityId']) {
