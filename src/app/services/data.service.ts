@@ -1,4 +1,6 @@
 
+
+
 import { Injectable, signal, inject, Injector } from '@angular/core';
 import { Company, Contact, Opportunity, Task, Activity, User, Role, EmailTemplate, RelatedEntity, Project, Product, ServicePlan, OpportunityStage, Lead, LeadStatus, Quote, Case } from '../models/crm.models';
 import { LoggingService } from './logging.service';
@@ -101,6 +103,9 @@ export class DataService {
       case 'opportunity':
         const opp = this.opportunities().find(o => o.id === entity.id);
         return opp?.name || 'N/A';
+      case 'task':
+        const task = this.tasks().find(t => t.id === entity.id);
+        return task?.title || 'N/A';
       default: return 'N/A';
     }
   }
@@ -122,7 +127,18 @@ export class DataService {
   async addCompany(company: Company) { this.companies.update(c => [...c, company]); await this.apiService.addCompany(company); this.logAction('create', `Created company: ${company.name}`, { type: 'company', id: company.id }); }
   async addContact(contact: Contact) { this.contacts.update(c => [...c, contact]); await this.apiService.addContact(contact); this.logAction('create', `Created contact: ${contact.name}`, { type: 'contact', id: contact.id }); this.handleHotLeadTask(contact); }
   async addOpportunity(opp: Opportunity) { this.opportunities.update(o => [...o, opp]); await this.apiService.addOpportunity(opp); this.logAction('create', `Created opportunity: ${opp.name}`, { type: 'opportunity', id: opp.id }); }
-  async addTask(task: Task) { this.tasks.update(t => [...t, task]); await this.apiService.addTask(task); this.logAction('create', `Created task: ${task.title}`, { type: 'task', id: task.id }); }
+  async addTask(task: Task) { 
+    this.tasks.update(t => [...t, task]); 
+    await this.apiService.addTask(task); 
+    this.logAction('create', `Created task: ${task.title}`, { type: 'task', id: task.id }); 
+    const currentUser = this.authService.currentUser();
+    if (currentUser && task.ownerId !== currentUser.id) {
+        this.notificationService.addNotification({
+            userId: task.ownerId,
+            message: `${currentUser.name} assigned you a new task: "${task.title}"`
+        });
+    }
+  }
   async addActivity(activity: Activity) { this.activities.update(a => [...a, activity]); await this.apiService.addActivity(activity); this.logAction('create', `Created activity: ${activity.subject}`, { type: 'activity', id: activity.id }); }
   async addUser(user: User) { this.users.update(u => [...u, user]); await this.apiService.addUser(user); this.logAction('create', `Invited user: ${user.name}`, { type: 'user', id: user.id }); }
   async addTemplate(template: EmailTemplate) { this.emailTemplates.update(t => [...t, template]); await this.apiService.addTemplate(template); }
@@ -137,7 +153,19 @@ export class DataService {
   async updateCompany(company: Company) { this.companies.update(c => c.map(x => x.id === company.id ? company : x)); await this.apiService.updateCompany(company); this.logAction('update', `Updated company: ${company.name}`, { type: 'company', id: company.id }); }
   async updateContact(contact: Contact) { this.contacts.update(c => c.map(x => x.id === contact.id ? contact : x)); await this.apiService.updateContact(contact); this.logAction('update', `Updated contact: ${contact.name}`, { type: 'contact', id: contact.id }); this.handleHotLeadTask(contact); }
   async updateOpportunity(opp: Opportunity) { const oldOpp = this.opportunities().find(o => o.id === opp.id); this.opportunities.update(o => o.map(x => x.id === opp.id ? opp : x)); await this.apiService.updateOpportunity(opp); this.logAction('update', `Updated opportunity: ${opp.name}`, { type: 'opportunity', id: opp.id }); if (oldOpp?.stage !== OpportunityStage.ClosedWon && opp.stage === OpportunityStage.ClosedWon) { this.handleWonOpportunity(opp); } }
-  async updateTask(task: Task) { this.tasks.update(t => t.map(x => x.id === task.id ? task : x)); await this.apiService.updateTask(task); this.logAction('update', `Updated task: ${task.title}`, { type: 'task', id: task.id }); }
+  async updateTask(task: Task) { 
+    const oldTask = this.tasks().find(t => t.id === task.id);
+    this.tasks.update(t => t.map(x => x.id === task.id ? task : x)); 
+    await this.apiService.updateTask(task); 
+    this.logAction('update', `Updated task: ${task.title}`, { type: 'task', id: task.id }); 
+    const currentUser = this.authService.currentUser();
+    if (currentUser && oldTask && oldTask.ownerId !== task.ownerId && task.ownerId !== currentUser.id) {
+        this.notificationService.addNotification({
+            userId: task.ownerId,
+            message: `${currentUser.name} reassigned a task to you: "${task.title}"`
+        });
+    }
+  }
   async updateActivity(activity: Activity) { this.activities.update(a => a.map(x => x.id === activity.id ? activity : x)); await this.apiService.updateActivity(activity); this.logAction('update', `Updated activity: ${activity.subject}`, { type: 'activity', id: activity.id }); }
   async updateUser(user: User) { this.users.update(u => u.map(x => x.id === user.id ? user : x)); await this.apiService.updateUser(user); this.logAction('update', `Updated user: ${user.name}`, { type: 'user', id: user.id }); }
   async updateTemplate(template: EmailTemplate) { this.emailTemplates.update(t => t.map(x => x.id === template.id ? template : x)); await this.apiService.updateTemplate(template); }

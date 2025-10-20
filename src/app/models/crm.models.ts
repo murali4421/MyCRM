@@ -1,3 +1,4 @@
+
 export enum OpportunityStage {
   Prospecting = 'Prospecting',
   Qualification = 'Qualification',
@@ -66,6 +67,15 @@ export interface Contact {
   leadScore?: 'Hot' | 'Warm' | 'Cold';
 }
 
+export interface FileAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: 'Quote' | 'Contract' | 'Presentation' | 'Other';
+  uploadedAt: string;
+  size: number; // in bytes
+}
+
 export interface Opportunity {
   id: string;
   name: string;
@@ -75,6 +85,10 @@ export interface Opportunity {
   closeDate: string;
   ownerId: string;
   createdAt: string;
+  analysisDetails?: string;
+  proposalDetails?: string;
+  negotiationDetails?: string;
+  attachments?: FileAttachment[];
 }
 
 export interface Task {
@@ -135,7 +149,7 @@ export interface EmailTemplate {
 }
 
 export interface RelatedEntity {
-  type: 'company' | 'contact' | 'opportunity';
+  type: 'company' | 'contact' | 'opportunity' | 'task';
   id: string;
 }
 

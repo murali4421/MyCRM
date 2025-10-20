@@ -1,3 +1,4 @@
+
 import { Injectable, signal, WritableSignal, effect } from '@angular/core';
 import { 
   AppView, AuthView, ProfileView, UsersAndRolesView,
@@ -56,6 +57,7 @@ export class UiService {
   selectedQuote = signal<Quote | null | undefined>(undefined);
   previewingQuote = signal<Quote | undefined>(undefined);
   selectedCase = signal<Case | null | undefined>(undefined);
+  isModalReadonly = signal(false);
   
   // Email Composer
   emailComposerData = signal<{ to: string; subject: string; body: string; relatedEntity: RelatedEntity | null }>({ to: '', subject: '', body: '', relatedEntity: null });
@@ -226,6 +228,7 @@ export class UiService {
 
   closeTaskModal() {
     this.editingTask.set(undefined);
+    this.isModalReadonly.set(false);
   }
   
   openProjectModal(project: Project | null) {
@@ -251,6 +254,7 @@ export class UiService {
 
   closeActivityEditModal() {
     this.editingActivity.set(undefined);
+    this.isModalReadonly.set(false);
   }
 
   openUserModal(user: User | null) {

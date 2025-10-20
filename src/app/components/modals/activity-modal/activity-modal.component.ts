@@ -1,3 +1,4 @@
+
 // FIX: Completed the implementation of ActivityModalComponent, which was previously missing/truncated, to resolve the export error.
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -27,7 +28,7 @@ import { ThemeService } from '../../../services/theme.service';
             <div class="space-y-4">
               <div>
                 <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Type</label>
-                <select name="type" [ngModel]="activityModel()?.type" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+                <select name="type" [ngModel]="activityModel()?.type" required [disabled]="isReadonly()" class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                   <option>Call summary</option>
                   <option>Email</option>
                   <option>Meeting</option>
@@ -37,31 +38,33 @@ import { ThemeService } from '../../../services/theme.service';
 
               <div>
                 <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Subject</label>
-                <input type="text" name="subject" [ngModel]="activityModel()?.subject" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
+                <input type="text" name="subject" [ngModel]="activityModel()?.subject" required [disabled]="isReadonly()" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
 
               <div>
                 <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Description / Notes</label>
                 <div class="relative">
-                  <textarea name="description" [ngModel]="activityModel()?.description" #descriptionField="ngModel" (ngModelChange)="rawTextForSummary.set($event)" rows="5" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')"></textarea>
-                  <button type="button" (click)="generateSummary(descriptionField.value)" [disabled]="geminiService.isGeneratingSummary() || !descriptionField.value" class="absolute bottom-2 right-2 px-3 py-1.5 rounded-md text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap" [class]="themeService.c('bg-accent-subtle') + ' ' + themeService.c('text-accent-subtle') + ' ' + themeService.c('hover:bg-accent-subtle-hover')">
-                    @if (geminiService.isGeneratingSummary()) {
-                      <div class="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" [class]="themeService.c('border-accent')"></div>
-                    } @else {
-                      <span>✨ Summarize</span>
-                    }
-                  </button>
+                  <textarea name="description" [ngModel]="activityModel()?.description" #descriptionField="ngModel" (ngModelChange)="rawTextForSummary.set($event)" rows="5" required [readonly]="isReadonly()" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')"></textarea>
+                  @if (!isReadonly()) {
+                    <button type="button" (click)="generateSummary(descriptionField.value)" [disabled]="geminiService.isGeneratingSummary() || !descriptionField.value" class="absolute bottom-2 right-2 px-3 py-1.5 rounded-md text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap" [class]="themeService.c('bg-accent-subtle') + ' ' + themeService.c('text-accent-subtle') + ' ' + themeService.c('hover:bg-accent-subtle-hover')">
+                      @if (geminiService.isGeneratingSummary()) {
+                        <div class="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" [class]="themeService.c('border-accent')"></div>
+                      } @else {
+                        <span>✨ Summarize</span>
+                      }
+                    </button>
+                  }
                 </div>
               </div>
 
               <div>
                 <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Date & Time</label>
-                <input type="datetime-local" name="startTime" [ngModel]="activityModel()?.startTime" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
+                <input type="datetime-local" name="startTime" [ngModel]="activityModel()?.startTime" required [disabled]="isReadonly()" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
               </div>
               
               <div>
                 <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Owner</label>
-                <select name="ownerId" [ngModel]="activityModel()?.ownerId" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+                <select name="ownerId" [ngModel]="activityModel()?.ownerId" required [disabled]="isReadonly()" class="mt-1 block w-full pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                     @for(user of dataService.users(); track user.id) {
                         <option [value]="user.id">{{user.name}}</option>
                     }
@@ -71,14 +74,14 @@ import { ThemeService } from '../../../services/theme.service';
               <div>
                 <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Related To</label>
                 <div class="mt-1 flex gap-2">
-                    <select name="relatedEntityType" [ngModel]="activityModel().relatedEntity?.type ?? 'none'" (ngModelChange)="onEntityTypeChange(activityForm, $event)" class="block w-1/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+                    <select name="relatedEntityType" [ngModel]="activityModel().relatedEntity?.type ?? 'none'" (ngModelChange)="onEntityTypeChange(activityForm, $event)" [disabled]="isReadonly()" class="block w-1/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                         <option value="none">-- None --</option>
                         <option value="contact">Contact</option>
                         <option value="company">Company</option>
                         <option value="opportunity">Opportunity</option>
                     </select>
                     @if (relatedEntityType() !== 'none') {
-                        <select name="relatedEntityId" [ngModel]="activityModel().relatedEntity?.id" class="block w-2/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+                        <select name="relatedEntityId" [ngModel]="activityModel().relatedEntity?.id" [disabled]="isReadonly()" class="block w-2/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
                             <option [ngValue]="undefined" disabled>Select {{ relatedEntityType() }}</option>
                             @switch (relatedEntityType()) {
                                 @case ('contact') {
@@ -98,8 +101,12 @@ import { ThemeService } from '../../../services/theme.service';
 
             </div>
             <div class="mt-8 pt-4 border-t flex justify-end gap-2" [class]="themeService.c('border-primary')">
-              <button type="button" (click)="closeModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
-              <button type="submit" [disabled]="activityForm.invalid" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled')">Save Activity</button>
+              @if (isReadonly()) {
+                <button type="button" (click)="closeModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Close</button>
+              } @else {
+                <button type="button" (click)="closeModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
+                <button type="submit" [disabled]="activityForm.invalid" class="text-white px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled')">Save Activity</button>
+              }
             </div>
           </form>
         </div>
@@ -120,8 +127,10 @@ export class ActivityModalComponent {
   activityModel = signal<Partial<Activity>>({});
   rawTextForSummary = signal('');
   relatedEntityType = signal<'contact' | 'company' | 'opportunity' | 'none'>('none');
+  isReadonly = computed(() => this.uiService.isModalReadonly());
 
   title = computed(() => {
+    if (this.isReadonly()) return 'Activity Details';
     if (this.isAutoGenerated()) return 'Confirm AI Generated Activity';
     return this.isNew ? 'Log Activity' : 'Edit Activity';
   });
@@ -193,7 +202,7 @@ export class ActivityModalComponent {
   }
 
   async saveActivity(form: NgForm) {
-    if (form.invalid) return;
+    if (form.invalid || this.isReadonly()) return;
     
     const { relatedEntityType, relatedEntityId, ...activityFormValues } = form.value;
     const finalActivityData = { ...this.activityModel(), ...activityFormValues };

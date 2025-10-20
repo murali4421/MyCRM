@@ -58,6 +58,28 @@ import { ThemeService } from '../../../services/theme.service';
               <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Website</label>
               <input type="text" name="website" [ngModel]="companyModel()?.website" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')">
             </div>
+
+            <div class="pt-4 mt-4 border-t" [class]="themeService.c('border-primary')">
+                <h3 class="text-lg font-medium leading-6" [class]="themeService.c('text-primary')">Address</h3>
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Address Line 1</label>
+                        <input type="text" name="addressLine1" [ngModel]="companyModel()?.addressLine1" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium" [class]="themeService.c('text-base')">City</label>
+                        <input type="text" name="city" [ngModel]="companyModel()?.city" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium" [class]="themeService.c('text-base')">State / Province</label>
+                        <input type="text" name="state" [ngModel]="companyModel()?.state" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Postal Code</label>
+                        <input type="text" name="postalCode" [ngModel]="companyModel()?.postalCode" class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary')">
+                    </div>
+                </div>
+            </div>
             
             <div class="flex justify-end gap-2 mt-6 pt-4 border-t" [class]="themeService.c('border-primary')">
                 <button type="button" (click)="uiService.closeCompanyDetails()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>

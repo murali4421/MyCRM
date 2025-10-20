@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { AuthService } from '../../../services/auth.service';
-import { Activity } from '../../../models/crm.models';
+import { Activity, RelatedEntity } from '../../../models/crm.models';
 import { ThemeService } from '../../../services/theme.service';
 
 @Component({
@@ -39,6 +39,37 @@ import { ThemeService } from '../../../services/theme.service';
                             <option [value]="template.id">{{template.name}}</option>
                         }
                     </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Related To</label>
+                  <div class="mt-1 flex gap-2">
+                    <select name="relatedEntityType" [ngModel]="relatedEntityType()" (ngModelChange)="onEntityTypeChange($event)" class="block w-1/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+                      <option value="none">-- None --</option>
+                      <option value="contact">Contact</option>
+                      <option value="company">Company</option>
+                      <option value="opportunity">Opportunity</option>
+                      <option value="task">Task</option>
+                    </select>
+                    @if (relatedEntityType() !== 'none') {
+                      <select name="relatedEntityId" [ngModel]="relatedEntityId()" (ngModelChange)="relatedEntityId.set($event)" class="block w-2/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+                        <option [ngValue]="undefined" disabled>Select {{ relatedEntityType() | titlecase }}</option>
+                        @switch (relatedEntityType()) {
+                          @case ('contact') {
+                            @for(contact of dataService.contacts(); track contact.id) { <option [value]="contact.id">{{ contact.name }}</option> }
+                          }
+                          @case ('company') {
+                            @for(company of dataService.companies(); track company.id) { <option [value]="company.id">{{ company.name }}</option> }
+                          }
+                          @case ('opportunity') {
+                            @for(opp of dataService.opportunities(); track opp.id) { <option [value]="opp.id">{{ opp.name }}</option> }
+                          }
+                          @case ('task') {
+                            @for(task of dataService.tasks(); track task.id) { <option [value]="task.id">{{ task.title }}</option> }
+                          }
+                        }
+                      </select>
+                    }
+                  </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     <div>
@@ -75,6 +106,23 @@ export class EmailComposerModalComponent {
   themeService = inject(ThemeService);
 
   composerData = this.uiService.emailComposerData;
+  relatedEntityType = signal<'contact' | 'company' | 'opportunity' | 'task' | 'none'>('none');
+  relatedEntityId = signal<string | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const data = this.uiService.emailComposerData();
+      untracked(() => {
+        if (data.relatedEntity) {
+          this.relatedEntityType.set(data.relatedEntity.type);
+          this.relatedEntityId.set(data.relatedEntity.id);
+        } else {
+          this.relatedEntityType.set('none');
+          this.relatedEntityId.set(undefined);
+        }
+      });
+    });
+  }
 
   previewHtml = computed(() => {
     const body = this.composerData().body;
@@ -116,8 +164,21 @@ export class EmailComposerModalComponent {
     }
   }
 
+  onEntityTypeChange(newType: 'contact' | 'company' | 'opportunity' | 'task' | 'none') {
+    this.relatedEntityType.set(newType);
+    this.relatedEntityId.set(undefined);
+  }
+
   async sendEmail(form: NgForm) {
     if (form.invalid) return;
+
+    let finalRelatedEntity: RelatedEntity | undefined = undefined;
+    const entityType = this.relatedEntityType();
+    const entityId = this.relatedEntityId();
+
+    if (entityType !== 'none' && entityId) {
+      finalRelatedEntity = { type: entityType, id: entityId };
+    }
 
     // In a real app, this would send an email. Here, we just log it as an activity.
     const newActivity: Activity = {
@@ -129,7 +190,7 @@ export class EmailComposerModalComponent {
       endTime: new Date().toISOString(),
       status: 'Done',
       ownerId: this.authService.currentUser()!.id,
-      relatedEntity: this.composerData().relatedEntity || undefined,
+      relatedEntity: finalRelatedEntity,
     };
 
     await this.dataService.addActivity(newActivity);
