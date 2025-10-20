@@ -1,4 +1,5 @@
 
+
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -49,6 +50,7 @@ import { ThemeService } from '../../../services/theme.service';
                             <option value="contact">Contact</option>
                             <option value="company">Company</option>
                             <option value="opportunity">Opportunity</option>
+                            <option value="task">Task</option>
                         </select>
                         @if (relatedEntityType() !== 'none') {
                             <select name="relatedEntityId" [ngModel]="taskModel().relatedEntity?.id" [disabled]="isReadonly()" class="block w-2/3 pl-3 pr-10 py-2 text-base sm:text-sm rounded-md" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:outline-none') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
@@ -62,6 +64,9 @@ import { ThemeService } from '../../../services/theme.service';
                                     }
                                     @case ('opportunity') {
                                         @for(opp of dataService.opportunities(); track opp.id) { <option [value]="opp.id">{{ opp.name }}</option> }
+                                    }
+                                    @case ('task') {
+                                        @for(task of availableParentTasks(); track task.id) { <option [value]="task.id">{{ task.title }}</option> }
                                     }
                                 }
                             </select>
@@ -103,7 +108,7 @@ export class TaskModalComponent {
 
   isNew = false;
   taskModel = signal<Partial<Task>>({});
-  relatedEntityType = signal<'contact' | 'company' | 'opportunity' | 'none'>('none');
+  relatedEntityType = signal<'contact' | 'company' | 'opportunity' | 'task' | 'none'>('none');
   isReadonly = computed(() => this.uiService.isModalReadonly());
 
   constructor() {
@@ -132,7 +137,7 @@ export class TaskModalComponent {
     return this.dataService.tasks().filter(t => t.id !== currentTaskId);
   });
   
-  onEntityTypeChange(form: NgForm, newType: 'contact' | 'company' | 'opportunity' | 'none') {
+  onEntityTypeChange(form: NgForm, newType: 'contact' | 'company' | 'opportunity' | 'task' | 'none') {
     this.relatedEntityType.set(newType);
     // Reset the second dropdown when the first one changes
     if (form.controls['relatedEntityId']) {
