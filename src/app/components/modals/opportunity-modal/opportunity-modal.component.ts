@@ -235,7 +235,8 @@ export class OpportunityModalComponent {
   authService = inject(AuthService);
   geminiService = inject(GeminiService);
   themeService = inject(ThemeService);
-  private sanitizer = inject(DomSanitizer);
+  // FIX: Explicitly type `sanitizer` to ensure `DomSanitizer` methods are available and correctly type-checked.
+  private sanitizer: DomSanitizer = inject(DomSanitizer);
 
   isNew = false;
   opportunityModel = signal<Partial<Opportunity>>({});

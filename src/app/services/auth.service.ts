@@ -1,5 +1,4 @@
 
-
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { User, Role, Company, AppView, ServicePlanFeatures } from '../models/crm.models';
@@ -195,7 +194,7 @@ export class AuthService {
     }
   });
 
-  private tenantUserIds = computed(() => {
+  tenantUserIds = computed(() => {
     const currentUser = this.currentUser();
     if (!currentUser) {
       return new Set<string>();
@@ -204,20 +203,20 @@ export class AuthService {
     return new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
   });
 
-  private tenantCompanyCount = computed(() => {
+  tenantCompanyCount = computed(() => {
     const tenantUserIds = this.tenantUserIds();
     if (tenantUserIds.size === 0) return 0;
     // Only count client companies (which don't have a planId), not the tenant company itself.
     return this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId) && !c.planId).length;
   });
 
-  private tenantContactCount = computed(() => {
+  tenantContactCount = computed(() => {
       const tenantUserIds = this.tenantUserIds();
       if (tenantUserIds.size === 0) return 0;
       return this.dataService.contacts().filter(c => tenantUserIds.has(c.ownerId)).length;
   });
   
-  private tenantOpportunityCount = computed(() => {
+  tenantOpportunityCount = computed(() => {
       const tenantUserIds = this.tenantUserIds();
       if (tenantUserIds.size === 0) return 0;
       return this.dataService.opportunities().filter(o => tenantUserIds.has(o.ownerId)).length;

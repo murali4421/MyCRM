@@ -1,9 +1,11 @@
+
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../../services/data.service';
 import { UiService } from '../../../services/ui.service';
 import { ThemeService } from '../../../services/theme.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-lead-conversion-modal',
@@ -65,6 +67,7 @@ export class LeadConversionModalComponent {
   dataService = inject(DataService);
   uiService = inject(UiService);
   themeService = inject(ThemeService);
+  authService = inject(AuthService);
   
   lead = this.uiService.leadToConvert;
   createOpportunity = false;
@@ -72,6 +75,25 @@ export class LeadConversionModalComponent {
 
   async convertLead(form: NgForm) {
     if (form.invalid || !this.lead()) return;
+
+    const companyExists = this.dataService.companies().some(c => c.name.toLowerCase() === this.lead()!.companyName.toLowerCase());
+    if (!companyExists && !this.authService.canAddCompany()) {
+      const limit = this.authService.limitFor('company')();
+      this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. Please upgrade to add more.`);
+      return;
+    }
+    
+    if (!this.authService.canAddContact()) {
+      const limit = this.authService.limitFor('contact')();
+      this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. Please upgrade to add more.`);
+      return;
+    }
+
+    if (this.createOpportunity && !this.authService.canAddOpportunity()) {
+      const limit = this.authService.limitFor('opportunity')();
+      this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. Please upgrade to add more.`);
+      return;
+    }
     
     this.isConverting.set(true);
     try {

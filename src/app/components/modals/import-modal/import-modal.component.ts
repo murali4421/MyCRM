@@ -1,3 +1,4 @@
+
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -154,6 +155,55 @@ export class ImportModalComponent {
         alert('Cannot import: user not logged in.');
         return;
     }
+
+    const dataToImport = this.uiService.csvData();
+    const importCount = dataToImport.length;
+
+    if (target === 'companies') {
+        const limit = this.authService.limitFor('company')();
+        if (limit !== -1) {
+            const currentCount = this.authService.tenantCompanyCount();
+            if (currentCount >= limit) {
+                this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. You cannot import more.`);
+                return;
+            }
+            if (currentCount + importCount > limit) {
+                this.uiService.openUpgradeModal(`Importing ${importCount} companies would exceed your plan's limit of ${limit}. You can add ${limit - currentCount} more.`);
+                return;
+            }
+        }
+    }
+
+    if (target === 'contacts') {
+        const limit = this.authService.limitFor('contact')();
+        if (limit !== -1) {
+            const currentCount = this.authService.tenantContactCount();
+            if (currentCount >= limit) {
+                this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. You cannot import more.`);
+                return;
+            }
+            if (currentCount + importCount > limit) {
+                this.uiService.openUpgradeModal(`Importing ${importCount} contacts would exceed your plan's limit of ${limit}. You can add ${limit - currentCount} more.`);
+                return;
+            }
+        }
+    }
+    
+    if (target === 'opportunities') {
+        const limit = this.authService.limitFor('opportunity')();
+        if (limit !== -1) {
+            const currentCount = this.authService.tenantOpportunityCount();
+            if (currentCount >= limit) {
+                this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. You cannot import more.`);
+                return;
+            }
+            if (currentCount + importCount > limit) {
+                this.uiService.openUpgradeModal(`Importing ${importCount} opportunities would exceed your plan's limit of ${limit}. You can add ${limit - currentCount} more.`);
+                return;
+            }
+        }
+    }
+
     if (!defaultPlan) {
         alert('Cannot import: No default plan is set.');
         return;
