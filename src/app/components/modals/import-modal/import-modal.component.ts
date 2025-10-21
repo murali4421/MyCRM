@@ -1,4 +1,5 @@
 
+
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -78,7 +79,7 @@ export class ImportModalComponent {
     switch (this.uiService.importTarget()) {
       case 'companies': return ['name', 'industry', 'website'];
       case 'contacts': return ['name', 'email', 'phone', 'companyName'];
-      case 'opportunities': return ['name', 'value', 'closeDate'];
+      case 'opportunities': return ['name', 'companyName', 'value', 'closeDate'];
       case 'tasks': return ['title', 'dueDate'];
       default: return [];
     }
@@ -89,7 +90,7 @@ export class ImportModalComponent {
     const requiredFields: {[key:string]: string[]} = {
       companies: ['name'],
       contacts: ['name', 'email', 'companyName'],
-      opportunities: ['name', 'value'],
+      opportunities: ['name', 'companyName', 'value'],
       tasks: ['title']
     };
     const target = this.uiService.importTarget();
@@ -148,7 +149,6 @@ export class ImportModalComponent {
     const importPromises: Promise<any>[] = [];
     const errors: string[] = [];
     const currentUser = this.authService.currentUser();
-    const defaultPlan = this.dataService.servicePlans().find(p => p.isDefault);
     const target = this.uiService.importTarget();
 
     if (!currentUser) {
@@ -204,11 +204,6 @@ export class ImportModalComponent {
         }
     }
 
-    if (!defaultPlan) {
-        alert('Cannot import: No default plan is set.');
-        return;
-    }
-
     this.uiService.csvData().forEach((row, index) => {
       switch (target) {
         case 'companies': {
@@ -221,15 +216,13 @@ export class ImportModalComponent {
                 return;
             }
 
-            // FIX: Added the missing 'ownerId' property required by the Company interface.
             const newCompany: Company = {
-                id: `comp-${Date.now()}-${index}`,
+                id: `comp-import-${Date.now()}-${index}`,
                 name: row[nameHeader],
                 industry: industryHeader ? row[industryHeader] : '',
                 website: websiteHeader ? row[websiteHeader] : '',
                 createdAt: new Date().toISOString(),
                 ownerId: currentUser.id,
-                planId: defaultPlan.id,
             };
             importPromises.push(this.dataService.addCompany(newCompany));
             break;
@@ -254,7 +247,7 @@ export class ImportModalComponent {
             }
 
             const newContact: Contact = {
-                id: `cont-${Date.now()}-${index}`,
+                id: `cont-import-${Date.now()}-${index}`,
                 name: row[nameHeader],
                 email: row[emailHeader],
                 phone: phoneHeader ? row[phoneHeader] : '',
@@ -265,7 +258,58 @@ export class ImportModalComponent {
             importPromises.push(this.dataService.addContact(newContact));
             break;
         }
-        // TODO: Implement other import types
+        case 'opportunities': {
+          const nameHeader = invertedMappings.name;
+          const companyNameHeader = invertedMappings.companyName;
+          const valueHeader = invertedMappings.value;
+          const closeDateHeader = invertedMappings.closeDate;
+
+          if (!nameHeader || !row[nameHeader] || !companyNameHeader || !row[companyNameHeader] || !valueHeader || !row[valueHeader]) {
+              errors.push(`Row ${index + 2}: Missing required data (name, companyName, or value). Skipping.`);
+              return;
+          }
+
+          const companyName = row[companyNameHeader];
+          const company = this.dataService.companies().find(c => c.name.toLowerCase() === companyName.toLowerCase());
+
+          if (!company) {
+              errors.push(`Row ${index + 2}: Company "${companyName}" not found. Skipping.`);
+              return;
+          }
+
+          const newOpp: Opportunity = {
+              id: `opp-import-${Date.now()}-${index}`,
+              name: row[nameHeader],
+              companyId: company.id,
+              stage: OpportunityStage.Prospecting,
+              value: parseFloat(row[valueHeader]),
+              closeDate: closeDateHeader && row[closeDateHeader] ? new Date(row[closeDateHeader]).toISOString().split('T')[0] : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+              ownerId: currentUser.id,
+              createdAt: new Date().toISOString()
+          };
+          importPromises.push(this.dataService.addOpportunity(newOpp));
+          break;
+        }
+        case 'tasks': {
+          const titleHeader = invertedMappings.title;
+          const dueDateHeader = invertedMappings.dueDate;
+
+          if (!titleHeader || !row[titleHeader]) {
+              errors.push(`Row ${index + 2}: Missing task title. Skipping.`);
+              return;
+          }
+
+          const newTask: Task = {
+              id: `task-import-${Date.now()}-${index}`,
+              title: row[titleHeader],
+              dueDate: dueDateHeader && row[dueDateHeader] ? new Date(row[dueDateHeader]).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              ownerId: currentUser.id,
+              completed: false,
+              createdAt: new Date().toISOString(),
+          };
+          importPromises.push(this.dataService.addTask(newTask));
+          break;
+        }
       }
     });
     
