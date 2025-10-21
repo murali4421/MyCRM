@@ -25,11 +25,11 @@ import { ThemeService } from '../../services/theme.service';
             <button (click)="uiService.openImportModal('contacts')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('contacts')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
             <button 
-                (click)="openAddContactModal()" 
-                [disabled]="!authService.canAddContact()"
+                (click)="openAddContactModal()"
                 [title]="authService.canAddContact() ? 'Add a new contact' : 'Your plan limit has been reached. Please upgrade.'"
-                class="px-4 py-2 rounded-md text-sm font-medium disabled:cursor-not-allowed"
-                [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">
+                class="px-4 py-2 rounded-md text-sm font-medium"
+                [class.cursor-not-allowed]="!authService.canAddContact()"
+                [class]="(authService.canAddContact() ? (themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover')) : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">
                 Add Contact
             </button>
           </div>
