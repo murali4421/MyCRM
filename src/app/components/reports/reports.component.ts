@@ -110,13 +110,15 @@ export class ReportsComponent {
     const currentUser = this.authService.currentUser();
     const userRole = this.authService.currentUserRole();
     if (!currentUser || !userRole) return [];
+
+    const tenantUsers = this.dataService.users().filter(u => u.companyId === currentUser.companyId);
   
     if (userRole.name === 'Admin') {
-      return this.dataService.users().map(u => u.id);
+      return tenantUsers.map(u => u.id);
     }
     
     if (userRole.name === 'Manager') {
-      const teamMemberIds = this.dataService.users().filter(u => u.managerId === currentUser.id).map(u => u.id);
+      const teamMemberIds = tenantUsers.filter(u => u.managerId === currentUser.id).map(u => u.id);
       return [currentUser.id, ...teamMemberIds];
     }
     

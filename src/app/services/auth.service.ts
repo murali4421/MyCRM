@@ -1,4 +1,5 @@
 
+
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { User, Role, Company, AppView, ServicePlanFeatures } from '../models/crm.models';
@@ -206,7 +207,8 @@ export class AuthService {
   private tenantCompanyCount = computed(() => {
     const tenantUserIds = this.tenantUserIds();
     if (tenantUserIds.size === 0) return 0;
-    return this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId)).length;
+    // Only count client companies (which don't have a planId), not the tenant company itself.
+    return this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId) && !c.planId).length;
   });
 
   private tenantContactCount = computed(() => {

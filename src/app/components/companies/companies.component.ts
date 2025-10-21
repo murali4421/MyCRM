@@ -125,6 +125,31 @@ export class CompaniesComponent {
   themeService = inject(ThemeService);
 
   searchTerm = signal('');
+  
+  private getVisibleUserIds = computed(() => {
+    const currentUser = this.authService.currentUser();
+    const userRole = this.authService.currentUserRole();
+    if (!currentUser || !userRole) return [];
+
+    const tenantUsers = this.dataService.users().filter(u => u.companyId === currentUser.companyId);
+  
+    if (userRole.name === 'Admin') {
+      return tenantUsers.map(u => u.id);
+    }
+    
+    if (userRole.name === 'Manager') {
+      const teamMemberIds = tenantUsers.filter(u => u.managerId === currentUser.id).map(u => u.id);
+      return [currentUser.id, ...teamMemberIds];
+    }
+    
+    return [currentUser.id]; // Sales Rep
+  });
+  
+  private visibleCompanies = computed(() => {
+    const userIds = new Set(this.getVisibleUserIds());
+    // Only show client companies (which don't have a planId).
+    return this.dataService.companies().filter(c => c.ownerId && userIds.has(c.ownerId) && !c.planId);
+  });
 
   constructor() {
     effect(() => {
@@ -140,7 +165,7 @@ export class CompaniesComponent {
 
   filteredCompanies = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.dataService.companies().filter(company => 
+    return this.visibleCompanies().filter(company => 
       company.name.toLowerCase().includes(term) ||
       company.industry.toLowerCase().includes(term)
     );
