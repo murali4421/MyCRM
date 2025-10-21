@@ -1,3 +1,4 @@
+
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { User, Role, Company, AppView, ServicePlanFeatures } from '../models/crm.models';
@@ -202,6 +203,24 @@ export class AuthService {
     return new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
   });
 
+  private tenantCompanyCount = computed(() => {
+    const tenantUserIds = this.tenantUserIds();
+    if (tenantUserIds.size === 0) return 0;
+    return this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId)).length;
+  });
+
+  private tenantContactCount = computed(() => {
+      const tenantUserIds = this.tenantUserIds();
+      if (tenantUserIds.size === 0) return 0;
+      return this.dataService.contacts().filter(c => tenantUserIds.has(c.ownerId)).length;
+  });
+  
+  private tenantOpportunityCount = computed(() => {
+      const tenantUserIds = this.tenantUserIds();
+      if (tenantUserIds.size === 0) return 0;
+      return this.dataService.opportunities().filter(o => tenantUserIds.has(o.ownerId)).length;
+  });
+
   canAddUser = computed(() => {
     const limit = this.limitFor('user')();
     if (limit === -1) return true; // Unlimited
@@ -211,25 +230,18 @@ export class AuthService {
   canAddCompany = computed(() => {
     const limit = this.limitFor('company')();
     if (limit === -1) return true; // Unlimited
-    const tenantUserIds = this.tenantUserIds();
-    // Count companies owned by any user in the tenant.
-    const tenantCompaniesCount = this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId)).length;
-    return tenantCompaniesCount < limit;
+    return this.tenantCompanyCount() < limit;
   });
   
   canAddContact = computed(() => {
     const limit = this.limitFor('contact')();
     if (limit === -1) return true;
-    const tenantUserIds = this.tenantUserIds();
-    const tenantContactsCount = this.dataService.contacts().filter(c => tenantUserIds.has(c.ownerId)).length;
-    return tenantContactsCount < limit;
+    return this.tenantContactCount() < limit;
   });
   
   canAddOpportunity = computed(() => {
     const limit = this.limitFor('opportunity')();
     if (limit === -1) return true;
-    const tenantUserIds = this.tenantUserIds();
-    const tenantOppsCount = this.dataService.opportunities().filter(o => tenantUserIds.has(o.ownerId)).length;
-    return tenantOppsCount < limit;
+    return this.tenantOpportunityCount() < limit;
   });
 }
