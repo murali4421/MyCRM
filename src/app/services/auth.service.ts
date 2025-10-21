@@ -193,24 +193,26 @@ export class AuthService {
     }
   });
 
+  private tenantUserIds = computed(() => {
+    const currentUser = this.currentUser();
+    if (!currentUser) {
+      return new Set<string>();
+    }
+    const currentTenantId = currentUser.companyId;
+    return new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
+  });
+
   canAddUser = computed(() => {
     const limit = this.limitFor('user')();
     if (limit === -1) return true; // Unlimited
-    const currentUser = this.currentUser();
-    if (!currentUser) return false;
-    const currentTenantId = currentUser.companyId;
-    const tenantUsersCount = this.dataService.users().filter(u => u.companyId === currentTenantId).length;
-    return tenantUsersCount < limit;
+    return this.tenantUserIds().size < limit;
   });
 
   canAddCompany = computed(() => {
     const limit = this.limitFor('company')();
     if (limit === -1) return true; // Unlimited
-    const currentUser = this.currentUser();
-    if (!currentUser) return false;
-    const currentTenantId = currentUser.companyId;
-    const tenantUserIds = new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
-    // Count companies owned by any user in the tenant, including the tenant company itself.
+    const tenantUserIds = this.tenantUserIds();
+    // Count companies owned by any user in the tenant.
     const tenantCompaniesCount = this.dataService.companies().filter(c => c.ownerId && tenantUserIds.has(c.ownerId)).length;
     return tenantCompaniesCount < limit;
   });
@@ -218,10 +220,7 @@ export class AuthService {
   canAddContact = computed(() => {
     const limit = this.limitFor('contact')();
     if (limit === -1) return true;
-    const currentUser = this.currentUser();
-    if (!currentUser) return false;
-    const currentTenantId = currentUser.companyId;
-    const tenantUserIds = new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
+    const tenantUserIds = this.tenantUserIds();
     const tenantContactsCount = this.dataService.contacts().filter(c => tenantUserIds.has(c.ownerId)).length;
     return tenantContactsCount < limit;
   });
@@ -229,10 +228,7 @@ export class AuthService {
   canAddOpportunity = computed(() => {
     const limit = this.limitFor('opportunity')();
     if (limit === -1) return true;
-    const currentUser = this.currentUser();
-    if (!currentUser) return false;
-    const currentTenantId = currentUser.companyId;
-    const tenantUserIds = new Set(this.dataService.users().filter(u => u.companyId === currentTenantId).map(u => u.id));
+    const tenantUserIds = this.tenantUserIds();
     const tenantOppsCount = this.dataService.opportunities().filter(o => tenantUserIds.has(o.ownerId)).length;
     return tenantOppsCount < limit;
   });
