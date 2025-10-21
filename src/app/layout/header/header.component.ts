@@ -10,9 +10,9 @@ import { ThemeService } from '../../services/theme.service';
   selector: 'app-header',
   imports: [CommonModule, NotificationCenterComponent],
   template: `
-     <header class="h-16 border-b flex items-center justify-between px-4 sm:px-6" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+     <header class="h-16 border-b flex items-center justify-between px-4 sm:px-6" [class]="themeService.c('bg-tertiary') + ' ' + themeService.c('border-contrast')">
         <!-- Hamburger Menu for mobile -->
-        <button (click)="uiService.isSidebarOpen.set(true)" class="lg:hidden hover:text-slate-200" [class]="themeService.c('text-secondary')">
+        <button (click)="uiService.isSidebarOpen.set(true)" class="lg:hidden hover:text-slate-200" [class]="themeService.c('text-contrast-secondary')">
           <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
@@ -24,7 +24,7 @@ import { ThemeService } from '../../services/theme.service';
         <div class="flex items-center space-x-1 sm:space-x-4">
             <!-- Notification Center -->
             <div class="relative">
-                <button (click)="toggleNotificationCenter()" class="relative p-2 rounded-full" [class]="themeService.c('text-secondary') + ' ' + themeService.c('bg-primary-hover')">
+                <button (click)="toggleNotificationCenter()" class="relative p-2 rounded-full" [class]="themeService.c('text-contrast-secondary') + ' ' + themeService.c('bg-transparent-hover')">
                     <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.95V4a1 1 0 10-2 0v1.05A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                     @if (notificationService.unreadCount() > 0) {
                         <span class="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full ring-2" [class]="themeService.c('bg-accent') + ' ' + themeService.c('ring-base-for-notifications')"></span>
