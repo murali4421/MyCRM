@@ -51,7 +51,12 @@ import { ThemeService } from '../../services/theme.service';
               (ngModelChange)="searchTerm.set($event)"
               class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto"
               [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('placeholder-text')">
-            <button (click)="startAdding()" [disabled]="isAdding()" class="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('text-on-accent')">Log Activity</button>
+            <button (click)="startAdding()" 
+              [disabled]="isAdding()"
+              [title]="authService.isFeatureEnabled('taskManagement')() ? 'Log a new activity' : 'Activity logging is not available on your plan. Please upgrade.'"
+              class="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+              [class.cursor-not-allowed]="!authService.isFeatureEnabled('taskManagement')()"
+              [class]="(authService.isFeatureEnabled('taskManagement')() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">Log Activity</button>
           </div>
       </div>
       
@@ -347,6 +352,10 @@ export class ActivitiesComponent {
   }
   
   startAdding() {
+    if (!this.authService.isFeatureEnabled('taskManagement')()) {
+        this.uiService.openUpgradeModal("Activity logging is not available on your current plan. Please upgrade.");
+        return;
+    }
     this.newActivity.set({
       ownerId: this.authService.currentUser()?.id,
       startTime: new Date().toISOString().slice(0, 16),

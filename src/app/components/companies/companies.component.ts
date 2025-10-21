@@ -25,11 +25,11 @@ import { ThemeService } from '../../services/theme.service';
             <button (click)="uiService.openImportModal('companies')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
             <button (click)="uiService.activeColumnCustomization.set('companies')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
             <button 
-              (click)="openAddCompanyModal()" 
-              [disabled]="!authService.canAddCompany()" 
+              (click)="openAddCompanyModal()"
               [title]="authService.canAddCompany() ? 'Add a new company' : 'Your plan limit has been reached. Please upgrade.'"
-              class="px-4 py-2 rounded-md text-sm font-medium disabled:cursor-not-allowed"
-              [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">
+              class="px-4 py-2 rounded-md text-sm font-medium"
+              [class.cursor-not-allowed]="!authService.canAddCompany()"
+              [class]="(authService.canAddCompany() ? (themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover')) : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">
               Add Company
             </button>
           </div>

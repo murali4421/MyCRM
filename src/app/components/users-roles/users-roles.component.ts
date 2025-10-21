@@ -50,9 +50,11 @@ import { ThemeService } from '../../services/theme.service';
               <h3 class="text-lg font-semibold" [class]="themeService.c('text-primary')">All Users</h3>
               <button 
                   (click)="startAdding()" 
-                  [disabled]="isAdding() || !authService.canAddUser()" 
+                  [disabled]="isAdding()" 
                   [title]="authService.canAddUser() ? 'Invite a new user' : 'Your plan limit has been reached. Please upgrade.'"
-                  class="px-4 py-2 rounded-md disabled:cursor-not-allowed" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">
+                  class="px-4 py-2 rounded-md disabled:cursor-not-allowed" 
+                  [class.cursor-not-allowed]="!authService.canAddUser()"
+                  [class]="(authService.canAddUser() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">
                   Invite User
               </button>
             </div>

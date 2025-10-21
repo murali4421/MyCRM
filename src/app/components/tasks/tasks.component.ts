@@ -25,9 +25,11 @@ import { ThemeService } from '../../services/theme.service';
             <button (click)="uiService.openImportModal('tasks')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
             <button 
               (click)="startAdding()" 
-              [disabled]="isAdding() || !authService.isFeatureEnabled('taskManagement')()" 
+              [disabled]="isAdding()"
+              [title]="authService.isFeatureEnabled('taskManagement')() ? 'Add a new task' : 'Task management is not available on your plan. Please upgrade.'"
               class="px-4 py-2 rounded-md text-sm font-medium disabled:cursor-not-allowed"
-              [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">
+              [class.cursor-not-allowed]="!authService.isFeatureEnabled('taskManagement')()"
+              [class]="(authService.isFeatureEnabled('taskManagement')() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">
               Add Task
             </button>
           </div>
