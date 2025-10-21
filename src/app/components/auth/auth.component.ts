@@ -50,7 +50,7 @@ import { ThemeService } from '../../services/theme.service';
                     }
                 </div>
                 <button type="submit" [disabled]="!loginForm.valid" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed"
-                  [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">
+                  [class]="(!loginForm.valid ? themeService.c('bg-disabled') : themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover')) + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('text-on-accent')">
                   Sign in
                 </button>
                  @if(authService.authError()) {
@@ -145,7 +145,7 @@ import { ThemeService } from '../../services/theme.service';
                   }
                 </div>
                 <button type="submit" [disabled]="!signupForm.valid || (password.value !== confirmPassword.value)" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2"
-                  [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">
+                  [class]="(!signupForm.valid || (password.value !== confirmPassword.value) ? themeService.c('bg-disabled') : themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover')) + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('text-on-accent')">
                   Sign up
                 </button>
                 @if(authService.authError()) {
