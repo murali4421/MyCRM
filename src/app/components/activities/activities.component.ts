@@ -53,10 +53,10 @@ import { ThemeService } from '../../services/theme.service';
               [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('placeholder-text')">
             <button (click)="startAdding()" 
               [disabled]="isAdding()"
-              [title]="authService.isFeatureEnabled('taskManagement')() ? 'Log a new activity' : 'Activity logging is not available on your plan. Please upgrade.'"
+              [title]="isTaskManagementEnabled() ? 'Log a new activity' : 'Activity logging is not available on your plan. Please upgrade.'"
               class="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
-              [class.cursor-not-allowed]="!authService.isFeatureEnabled('taskManagement')()"
-              [class]="(authService.isFeatureEnabled('taskManagement')() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">Log Activity</button>
+              [class.cursor-not-allowed]="!isTaskManagementEnabled()"
+              [class]="(isTaskManagementEnabled() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">Log Activity</button>
           </div>
       </div>
       
@@ -244,6 +244,8 @@ export class ActivitiesComponent {
   themeService = inject(ThemeService);
   private sanitizer: DomSanitizer = inject(DomSanitizer);
 
+  isTaskManagementEnabled = this.authService.isFeatureEnabled('taskManagement');
+
   // View and Filter State
   viewMode = signal<'feed' | 'table'>('feed');
   searchTerm = signal('');
@@ -355,7 +357,7 @@ export class ActivitiesComponent {
   }
   
   startAdding() {
-    if (!this.authService.isFeatureEnabled('taskManagement')()) {
+    if (!this.isTaskManagementEnabled()) {
         this.uiService.openUpgradeModal("Activity logging is not available on your current plan. Please upgrade.");
         return;
     }

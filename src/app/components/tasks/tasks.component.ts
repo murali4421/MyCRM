@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, NgForm } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { UiService } from '../../services/ui.service';
 import { AuthService } from '../../services/auth.service';
@@ -21,76 +21,70 @@ import { ThemeService } from '../../services/theme.service';
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
               class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto order-first sm:order-none"
-              [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('placeholder-text')">
-            <button (click)="uiService.openImportModal('tasks')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
-            <button 
-              (click)="startAdding()" 
-              [disabled]="isAdding()"
-              [title]="authService.isFeatureEnabled('taskManagement')() ? 'Add a new task' : 'Task management is not available on your plan. Please upgrade.'"
-              class="px-4 py-2 rounded-md text-sm font-medium disabled:cursor-not-allowed"
-              [class.cursor-not-allowed]="!authService.isFeatureEnabled('taskManagement')()"
-              [class]="(authService.isFeatureEnabled('taskManagement')() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">
+              [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+            <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)" class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto" [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+            <button (click)="uiService.activeColumnCustomization.set('tasks')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
+            <button (click)="openAddTaskModal()"
+              [title]="isTaskManagementEnabled() ? 'Add a new task' : 'Task management is not available on your plan. Please upgrade.'"
+              class="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+              [class.cursor-not-allowed]="!isTaskManagementEnabled()"
+              [class]="(isTaskManagementEnabled() ? themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') : themeService.c('bg-disabled')) + ' ' + themeService.c('text-on-accent')">
               Add Task
             </button>
           </div>
       </div>
-
-      @if (isAdding()) {
-        <div class="rounded-lg shadow-sm border p-4 mb-4" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
-          <form #newTaskForm="ngForm" (ngSubmit)="saveNewTask(newTaskForm)">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Title</label>
-                <input type="text" name="title" ngModel required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
-              </div>
-              <div>
-                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Due Date</label>
-                <input type="date" name="dueDate" [ngModel]="newTask.dueDate" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
-              </div>
-              <div>
-                <label class="block text-sm font-medium" [class]="themeService.c('text-base')">Owner</label>
-                <select name="ownerId" [ngModel]="newTask.ownerId" required class="mt-1 block w-full px-3 py-2 border rounded-md text-sm" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('focus:ring-accent')">
-                  @for(user of dataService.users(); track user.id) {
-                    <option [value]="user.id">{{user.name}}</option>
+      <div class="rounded-lg shadow-sm border overflow-x-auto" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+        <table class="min-w-full">
+          <thead [class]="themeService.c('bg-base')">
+            <tr>
+              <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider w-8" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')"></th>
+              @for(col of visibleColumns(); track col.id) {
+                <th class="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider" [class]="themeService.c('border-primary') + ' ' + themeService.c('text-secondary')">{{col.label}}</th>
+              }
+              <th class="px-4 py-3 border-b" [class]="themeService.c('border-primary')"></th>
+            </tr>
+          </thead>
+            <tbody class="divide-y" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
+              @for (task of paginatedTasks(); track task.id) {
+                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="uiService.openTaskModal(task)">
+                  <td class="px-4 py-3 text-sm">
+                    <input type="checkbox" [checked]="task.completed" (change)="toggleCompleted(task.id)" (click)="$event.stopPropagation()" class="h-4 w-4 rounded" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-accent') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent')">
+                  </td>
+                  @if (isColumnVisible('title')) {
+                    <td class="px-4 py-3 text-sm font-medium" [class.line-through]="task.completed" [class]="task.completed ? themeService.c('text-secondary') : themeService.c('text-primary')">{{task.title}}</td>
                   }
-                </select>
-              </div>
-            </div>
-            <div class="flex justify-end gap-2 mt-4 pt-4 border-t" [class]="themeService.c('border-primary')">
-              <button type="button" (click)="cancelAdd()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
-              <button type="submit" [disabled]="!newTaskForm.valid" class="px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">Save Task</button>
-            </div>
-          </form>
-        </div>
-      }
-
-      <div class="rounded-lg shadow-sm border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
-        <ul class="divide-y" [class]="themeService.c('border-primary')">
-          @for (task of paginatedTasks(); track task.id) {
-            <li class="p-4 flex items-center space-x-4 cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="uiService.openTaskModal(task)">
-              <input type="checkbox" [checked]="task.completed" (change)="dataService.toggleTaskCompleted(task.id)" (click)="$event.stopPropagation()" class="h-5 w-5 rounded cursor-pointer" [class]="themeService.c('text-accent') + ' ' + themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent')">
-              <div class="flex-1">
-                  <p class="font-medium" [class]="themeService.c('text-primary') + (task.completed ? ' line-through' : '')">{{ task.title }}</p>
-                  <div class="flex items-center space-x-4 text-sm mt-1" [class]="themeService.c('text-secondary')">
-                      <span>Due: {{ task.dueDate | date:'mediumDate' }}</span>
-                      <span>Owner: {{ dataService.getUserById(task.ownerId)?.name }}</span>
-                      @if(task.relatedEntity) {
-                        <span>Related To: {{ dataService.getRelatedEntityName(task.relatedEntity) }}</span>
-                      }
-                      @if(task.dependsOnTaskId) {
-                        <span>Blocks: {{ getParentTaskTitle(task.dependsOnTaskId) }}</span>
-                      }
-                  </div>
-              </div>
-              <button (click)="$event.stopPropagation(); deleteTask(task.id)" class="font-medium text-sm" [class]="themeService.c('text-danger') + ' ' + themeService.c('hover:text-danger-hover')">Delete</button>
-            </li>
-          }
-          @empty {
-            @if (!isAdding()) {
-              <li class="text-center py-8" [class]="themeService.c('text-secondary')">No tasks found.</li>
-            }
-          }
-        </ul>
+                  @if (isColumnVisible('dueDate')) {
+                    <td class="px-4 py-3 text-sm" [class.line-through]="task.completed" [class]="task.completed ? themeService.c('text-secondary') : themeService.c('text-base')">{{task.dueDate | date:'mediumDate'}}</td>
+                  }
+                  @if (isColumnVisible('owner')) {
+                    <td class="px-4 py-3 text-sm" [class.line-through]="task.completed" [class]="task.completed ? themeService.c('text-secondary') : themeService.c('text-base')">{{ dataService.getUserById(task.ownerId)?.name }}</td>
+                  }
+                   @if (isColumnVisible('relatedEntity')) {
+                    <td class="px-4 py-3 text-sm" [class.line-through]="task.completed" [class]="task.completed ? themeService.c('text-secondary') : themeService.c('text-base')">{{ task.relatedEntity ? dataService.getRelatedEntityName(task.relatedEntity) : 'N/A' }}</td>
+                  }
+                  @if (isColumnVisible('status')) {
+                    <td class="px-4 py-3 text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="task.completed ? themeService.c('bg-success-subtle') + ' ' + themeService.c('text-success') : themeService.c('bg-warning-subtle') + ' ' + themeService.c('text-warning')">
+                            {{ task.completed ? 'Completed' : 'Pending' }}
+                        </span>
+                    </td>
+                  }
+                  <td class="px-4 py-3 text-sm text-right">
+                    <button (click)="$event.stopPropagation(); delete(task.id)" class="font-medium" [class]="themeService.c('text-danger') + ' ' + themeService.c('hover:text-danger-hover')">Delete</button>
+                  </td>
+                </tr>
+              }
+              @empty {
+                <tr>
+                  <td [attr.colspan]="visibleColumns().length + 2" class="text-center py-8" [class]="themeService.c('text-secondary')">No tasks found.</td>
+                </tr>
+              }
+            </tbody>
+        </table>
       </div>
 
        <!-- Pagination Controls -->
@@ -140,16 +134,23 @@ export class TasksComponent {
   authService = inject(AuthService);
   themeService = inject(ThemeService);
 
+  isTaskManagementEnabled = this.authService.isFeatureEnabled('taskManagement');
+
   searchTerm = signal('');
-  isAdding = signal(false);
-  newTask: Partial<Task> = {};
+  statusFilter = signal<'all' | 'pending' | 'completed'>('all');
 
   constructor() {
     effect(() => {
+      // When filters change, reset pagination
       this.searchTerm();
+      this.statusFilter();
       this.uiService.setCurrentPage('tasks', 1);
     });
   }
+
+  columns = computed(() => this.uiService.tableColumnConfigs().tasks);
+  visibleColumns = computed(() => this.columns().filter(c => c.visible));
+  isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
 
   private getVisibleUserIds = computed(() => {
     const currentUser = this.authService.currentUser();
@@ -157,7 +158,7 @@ export class TasksComponent {
     if (!currentUser || !userRole) return [];
 
     const tenantUsers = this.dataService.users().filter(u => u.companyId === currentUser.companyId);
-  
+
     if (userRole.name === 'Admin') {
       return tenantUsers.map(u => u.id);
     }
@@ -169,14 +170,23 @@ export class TasksComponent {
     
     return [currentUser.id]; // Sales Rep
   });
-
-  visibleTasks = computed(() => this.dataService.tasks().filter(t => this.getVisibleUserIds().includes(t.ownerId)));
   
+  private visibleTasks = computed(() => {
+    const userIds = this.getVisibleUserIds();
+    return this.dataService.tasks().filter(t => userIds.includes(t.ownerId));
+  });
+
   filteredTasks = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.visibleTasks().filter(task => 
-      task.title.toLowerCase().includes(term)
-    );
+    const status = this.statusFilter();
+
+    return this.visibleTasks().filter(task => {
+      const termMatch = task.title.toLowerCase().includes(term);
+      const statusMatch = status === 'all' || 
+                          (status === 'completed' && task.completed) ||
+                          (status === 'pending' && !task.completed);
+      return termMatch && statusMatch;
+    });
   });
 
   // Pagination signals
@@ -216,44 +226,22 @@ export class TasksComponent {
   changeItemsPerPage(value: string | number) {
     this.uiService.setItemsPerPage(Number(value));
   }
-
-  async deleteTask(taskId: string) {
-    if (confirm('Are you sure you want to delete this task?')) {
-      await this.dataService.deleteTask(taskId);
-    }
-  }
-
-  getParentTaskTitle(taskId: string | null | undefined): string | undefined {
-    if (!taskId) return undefined;
-    return this.dataService.tasks().find(t => t.id === taskId)?.title;
-  }
-
-  startAdding() {
-    if (!this.authService.isFeatureEnabled('taskManagement')()) {
-        this.uiService.openUpgradeModal("Task Management is not available on your current plan. Please upgrade to add tasks.");
+  
+  openAddTaskModal() {
+    if (!this.isTaskManagementEnabled()) {
+        this.uiService.openUpgradeModal("Task management is not available on your current plan. Please upgrade.");
         return;
     }
-    this.newTask = {
-      ownerId: this.authService.currentUser()?.id,
-      dueDate: new Date().toISOString().split('T')[0],
-      completed: false
-    };
-    this.isAdding.set(true);
+    this.uiService.openTaskModal(null);
   }
 
-  cancelAdd() {
-    this.isAdding.set(false);
+  toggleCompleted(taskId: string) {
+    this.dataService.toggleTaskCompleted(taskId);
   }
 
-  async saveNewTask(form: NgForm) {
-    if (form.invalid) return;
-    const taskToAdd: Task = {
-      ...form.value,
-      id: `task-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      completed: false
-    };
-    await this.dataService.addTask(taskToAdd);
-    this.isAdding.set(false);
+  delete(taskId: string) {
+    if (confirm('Are you sure you want to delete this task?')) {
+        this.dataService.deleteTask(taskId);
+    }
   }
 }
