@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ModalService } from '../../services/modal.service';
+import { TableService } from '../../services/table.service';
 import { EmailTemplate } from '../../models/crm.models';
 import { ThemeService } from '../../services/theme.service';
 
@@ -28,7 +29,7 @@ import { ThemeService } from '../../services/theme.service';
               <option value="name_asc">Name (A-Z)</option>
               <option value="name_desc">Name (Z-A)</option>
             </select>
-            <button (click)="uiService.openTemplateEditor(null)" class="px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('text-on-accent')">New Template</button>
+            <button (click)="modalService.openTemplateEditor(null)" class="px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('text-on-accent')">New Template</button>
           </div>
       </div>
 
@@ -48,7 +49,7 @@ import { ThemeService } from '../../services/theme.service';
             <div class="p-3 border-t flex items-center justify-end space-x-2" [class]="themeService.c('bg-base') + ' ' + themeService.c('border-primary')">
               <button (click)="previewTemplate(template)" class="text-sm font-medium px-3 py-1 rounded-md" [class]="themeService.c('text-base') + ' ' + themeService.c('bg-primary-hover')">Preview</button>
               <button (click)="dataService.duplicateTemplate(template)" class="text-sm font-medium px-3 py-1 rounded-md" [class]="themeService.c('text-base') + ' ' + themeService.c('bg-primary-hover')">Duplicate</button>
-              <button (click)="uiService.openTemplateEditor(template)" class="text-sm font-medium" [class]="themeService.c('text-accent') + ' ' + themeService.c('hover:text-accent-hover')">Edit</button>
+              <button (click)="modalService.openTemplateEditor(template)" class="text-sm font-medium" [class]="themeService.c('text-accent') + ' ' + themeService.c('hover:text-accent-hover')">Edit</button>
             </div>
           </div>
         }
@@ -103,7 +104,8 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class EmailTemplatesComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   themeService = inject(ThemeService);
 
   searchTerm = signal('');
@@ -114,11 +116,11 @@ export class EmailTemplatesComponent {
       // When filters change, reset page to 1
       this.searchTerm();
       this.sortBy();
-      this.uiService.setCurrentPage('email-templates', 1);
+      this.tableService.setCurrentPage('email-templates', 1);
     });
 
-    if (![9, 12, 24].includes(this.uiService.pagination().itemsPerPage)) {
-      this.uiService.setItemsPerPage(9);
+    if (![9, 12, 24].includes(this.tableService.pagination().itemsPerPage)) {
+      this.tableService.setItemsPerPage(9);
     }
   }
 
@@ -143,8 +145,8 @@ export class EmailTemplatesComponent {
   });
 
   // Pagination
-  itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  currentPage = computed(() => this.uiService.pagination().currentPage['email-templates'] || 1);
+  itemsPerPage = computed(() => this.tableService.pagination().itemsPerPage);
+  currentPage = computed(() => this.tableService.pagination().currentPage['email-templates'] || 1);
   totalPages = computed(() => {
     const total = this.filteredTemplates().length;
     return total > 0 ? Math.ceil(total / this.itemsPerPage()) : 0;
@@ -167,12 +169,12 @@ export class EmailTemplatesComponent {
   
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
-      this.uiService.setCurrentPage('email-templates', newPage);
+      this.tableService.setCurrentPage('email-templates', newPage);
     }
   }
 
   changeItemsPerPage(value: string | number) {
-    this.uiService.setItemsPerPage(Number(value));
+    this.tableService.setItemsPerPage(Number(value));
   }
 
   getSanitizedBodyPreview(body: string): string {
@@ -180,6 +182,6 @@ export class EmailTemplatesComponent {
   }
 
   previewTemplate(template: EmailTemplate) {
-    this.uiService.openTemplatePreview(template);
+    this.modalService.openTemplatePreview(template);
   }
 }

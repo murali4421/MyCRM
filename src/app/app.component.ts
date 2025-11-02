@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
-import { UiService } from './services/ui.service';
+import { ViewService } from './services/view.service';
+import { ModalService } from './services/modal.service';
 import { DataService } from './services/data.service';
 import { ThemeService } from './services/theme.service';
 
@@ -48,10 +49,11 @@ import { ProductModalComponent } from './components/modals/product-modal/product
 import { SuperAdminComponent } from './components/super-admin/super-admin.component';
 import { UpgradePlanModalComponent } from './components/modals/upgrade-plan-modal/upgrade-plan-modal.component';
 import { LeadModalComponent } from './components/modals/lead-modal/lead-modal.component';
-import { LeadConversionModalComponent } from './components/modals/lead-conversion-modal/lead-conversion-modal.component';
+import { LeadConversionModalComponent } from './components/modals/import-modal/lead-conversion-modal/lead-conversion-modal.component';
 import { QuoteModalComponent } from './components/modals/quote-modal/quote-modal.component';
 import { QuotePreviewModalComponent } from './components/modals/quote-preview-modal/quote-preview-modal.component';
 import { CaseModalComponent } from './components/modals/case-modal/case-modal.component';
+import { TableService } from './services/table.service';
 
 @Component({
   selector: 'app-root',
@@ -107,11 +109,13 @@ import { CaseModalComponent } from './components/modals/case-modal/case-modal.co
 })
 export class AppComponent {
   authService = inject(AuthService);
-  uiService = inject(UiService);
+  viewService = inject(ViewService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   dataService = inject(DataService);
   themeService = inject(ThemeService);
 
   isCurrentViewAllowed = computed(() => {
-    return this.authService.isViewAllowed(this.uiService.view());
+    return this.authService.isViewAllowed(this.viewService.view());
   });
 }

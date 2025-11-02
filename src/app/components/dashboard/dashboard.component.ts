@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit, O
 import { CommonModule, DatePipe, PercentPipe, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
 import { OpportunityStage, AppView, Contact, Opportunity, Task, Activity, User } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
@@ -109,7 +108,6 @@ import { ThemeService } from '../../services/theme.service';
 export class DashboardComponent implements OnInit, OnDestroy {
   authService = inject(AuthService);
   dataService = inject(DataService);
-  uiService = inject(UiService);
   themeService = inject(ThemeService);
   private datePipe = inject(DatePipe);
   

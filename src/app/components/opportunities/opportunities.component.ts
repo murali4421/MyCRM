@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ModalService } from '../../services/modal.service';
 import { OpportunityStage, Opportunity } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
@@ -22,7 +22,7 @@ import { ThemeService } from '../../services/theme.service';
               (ngModelChange)="searchTerm.set($event)"
               class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto"
               [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent') + ' ' + themeService.c('placeholder-text')">
-            <button (click)="uiService.openImportModal('opportunities')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
+            <button (click)="modalService.openImportModal('opportunities')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
             <button 
               (click)="startAdding()" 
               [disabled]="isAdding()" 
@@ -71,7 +71,7 @@ import { ThemeService } from '../../services/theme.service';
                           <div 
                             class="rounded-md shadow-sm p-3 border cursor-pointer" 
                             [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary') + ' ' + 'hover:shadow-md' + ' ' + 'hover:' + themeService.c('border-accent')" 
-                            (click)="uiService.openOpportunityModal(opp)"
+                            (click)="modalService.openOpportunityModal(opp)"
                             draggable="true"
                             (dragstart)="onDragStart($event, opp.id)"
                            >
@@ -105,7 +105,7 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class OpportunitiesComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  modalService = inject(ModalService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
 
@@ -181,7 +181,7 @@ export class OpportunitiesComponent {
   startAdding() {
     if (!this.authService.canAddOpportunity()) {
         const limit = this.authService.limitFor('opportunity')();
-        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. Please upgrade to add more.`);
+        this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. Please upgrade to add more.`);
         return;
     }
     this.isAdding.set(true);

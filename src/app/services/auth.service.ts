@@ -1,9 +1,10 @@
 
+
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { User, Role, Company, AppView, ServicePlanFeatures } from '../models/crm.models';
 import { DataService } from './data.service';
-import { UiService } from './ui.service';
+import { ViewService } from './view.service';
 import { LoggingService } from './logging.service';
 
 @Injectable({
@@ -11,7 +12,7 @@ import { LoggingService } from './logging.service';
 })
 export class AuthService {
   private dataService = inject(DataService);
-  private uiService = inject(UiService);
+  private viewService = inject(ViewService);
   private loggingService = inject(LoggingService);
 
   currentUser = signal<User | null>(null);
@@ -134,7 +135,7 @@ export class AuthService {
   logout() {
     this.currentUser.set(null);
     this.authError.set(null);
-    this.uiService.authView.set('login');
+    this.viewService.authView.set('login');
   }
   
   async changePassword(current: string, newPass: string): Promise<{ success: boolean, message: string }> {

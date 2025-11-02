@@ -1,4 +1,3 @@
-// FIX: Completed the implementation of ActivityModalComponent, which was previously missing/truncated, to resolve the export error.
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';

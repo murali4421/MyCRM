@@ -39,7 +39,6 @@ import { ThemeService } from '../../../services/theme.service';
 export class EmailTemplatePreviewModalComponent {
   uiService = inject(UiService);
   themeService = inject(ThemeService);
-  // FIX: Explicitly type `sanitizer` to ensure `DomSanitizer` methods are available and correctly type-checked.
   private sanitizer: DomSanitizer = inject(DomSanitizer);
 
   template = this.uiService.previewingTemplate;

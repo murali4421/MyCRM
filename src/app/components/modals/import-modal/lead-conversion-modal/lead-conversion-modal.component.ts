@@ -2,21 +2,22 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { DataService } from '../../../services/data.service';
-import { UiService } from '../../../services/ui.service';
-import { ThemeService } from '../../../services/theme.service';
-import { AuthService } from '../../../services/auth.service';
+import { DataService } from '../../../../services/data.service';
+import { UiService } from '../../../../services/ui.service';
+import { ThemeService } from '../../../../services/theme.service';
+import { AuthService } from '../../../../services/auth.service';
+import { ModalService } from '../../../../services/modal.service';
 
 @Component({
   selector: 'app-lead-conversion-modal',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="fixed inset-0 bg-black/30 z-40" (click)="uiService.closeLeadConversionModal()"></div>
+    <div class="fixed inset-0 bg-black/30 z-40" (click)="modalService.closeLeadConversionModal()"></div>
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="rounded-lg shadow-xl w-full max-w-lg" [class]="themeService.c('bg-primary')">
         <header class="p-4 border-b flex justify-between items-center" [class]="themeService.c('border-primary')">
           <h2 class="text-xl font-semibold" [class]="themeService.c('text-primary')">Convert Lead: {{ lead()?.name }}</h2>
-          <button (click)="uiService.closeLeadConversionModal()" class="p-2 rounded-full" [class]="themeService.c('bg-primary-hover')">
+          <button (click)="modalService.closeLeadConversionModal()" class="p-2 rounded-full" [class]="themeService.c('bg-primary-hover')">
             <svg class="h-6 w-6" [class]="themeService.c('text-secondary')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </header>
@@ -54,7 +55,7 @@ import { AuthService } from '../../../services/auth.service';
             </div>
           </div>
           <footer class="px-6 pb-6 pt-4 flex justify-end gap-2">
-            <button type="button" (click)="uiService.closeLeadConversionModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
+            <button type="button" (click)="modalService.closeLeadConversionModal()" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Cancel</button>
             <button type="submit" [disabled]="convertForm.invalid" class="px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-accent') + ' ' + themeService.c('hover:bg-accent-hover') + ' ' + themeService.c('bg-disabled') + ' ' + themeService.c('text-on-accent')">Convert Lead</button>
           </footer>
         </form>
@@ -68,6 +69,7 @@ export class LeadConversionModalComponent {
   uiService = inject(UiService);
   themeService = inject(ThemeService);
   authService = inject(AuthService);
+  modalService = inject(ModalService);
   
   lead = this.uiService.leadToConvert;
   createOpportunity = false;
@@ -79,19 +81,19 @@ export class LeadConversionModalComponent {
     const companyExists = this.dataService.companies().some(c => c.name.toLowerCase() === this.lead()!.companyName.toLowerCase());
     if (!companyExists && !this.authService.canAddCompany()) {
       const limit = this.authService.limitFor('company')();
-      this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. Please upgrade to add more.`);
+      this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. Please upgrade to add more.`);
       return;
     }
     
     if (!this.authService.canAddContact()) {
       const limit = this.authService.limitFor('contact')();
-      this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. Please upgrade to add more.`);
+      this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. Please upgrade to add more.`);
       return;
     }
 
     if (this.createOpportunity && !this.authService.canAddOpportunity()) {
       const limit = this.authService.limitFor('opportunity')();
-      this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. Please upgrade to add more.`);
+      this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} opportunities. Please upgrade to add more.`);
       return;
     }
     
@@ -102,7 +104,7 @@ export class LeadConversionModalComponent {
         this.createOpportunity, 
         this.createOpportunity ? { name: form.value.oppName, value: form.value.oppValue } : undefined
       );
-      this.uiService.closeLeadConversionModal();
+      this.modalService.closeLeadConversionModal();
     } catch (error) {
       console.error("Conversion failed:", error);
       alert("Lead conversion failed. Please check the console for details.");

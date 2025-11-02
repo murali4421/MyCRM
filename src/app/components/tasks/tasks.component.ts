@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ModalService } from '../../services/modal.service';
+import { TableService } from '../../services/table.service';
 import { AuthService } from '../../services/auth.service';
 import { Task } from '../../models/crm.models';
 import { ThemeService } from '../../services/theme.service';
@@ -27,7 +28,7 @@ import { ThemeService } from '../../services/theme.service';
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
             </select>
-            <button (click)="uiService.activeColumnCustomization.set('tasks')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
+            <button (click)="tableService.activeColumnCustomization.set('tasks')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
             <button (click)="openAddTaskModal()"
               [title]="isTaskManagementEnabled() ? 'Add a new task' : 'Task management is not available on your plan. Please upgrade.'"
               class="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
@@ -50,7 +51,7 @@ import { ThemeService } from '../../services/theme.service';
           </thead>
             <tbody class="divide-y" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
               @for (task of paginatedTasks(); track task.id) {
-                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="uiService.openTaskModal(task)">
+                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="modalService.openTaskModal(task)">
                   <td class="px-4 py-3 text-sm">
                     <input type="checkbox" [checked]="task.completed" (change)="toggleCompleted(task.id)" (click)="$event.stopPropagation()" class="h-4 w-4 rounded" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('text-accent') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent')">
                   </td>
@@ -130,7 +131,8 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class TasksComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
 
@@ -144,11 +146,11 @@ export class TasksComponent {
       // When filters change, reset pagination
       this.searchTerm();
       this.statusFilter();
-      this.uiService.setCurrentPage('tasks', 1);
+      this.tableService.setCurrentPage('tasks', 1);
     });
   }
 
-  columns = computed(() => this.uiService.tableColumnConfigs().tasks);
+  columns = computed(() => this.tableService.tableColumnConfigs().tasks);
   visibleColumns = computed(() => this.columns().filter(c => c.visible));
   isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
 
@@ -190,8 +192,8 @@ export class TasksComponent {
   });
 
   // Pagination signals
-  itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  currentPage = computed(() => this.uiService.pagination().currentPage['tasks'] || 1);
+  itemsPerPage = computed(() => this.tableService.pagination().itemsPerPage);
+  currentPage = computed(() => this.tableService.pagination().currentPage['tasks'] || 1);
   totalPages = computed(() => {
     const total = this.filteredTasks().length;
     const perPage = this.itemsPerPage();
@@ -219,20 +221,20 @@ export class TasksComponent {
   // Methods to handle pagination changes
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
-      this.uiService.setCurrentPage('tasks', newPage);
+      this.tableService.setCurrentPage('tasks', newPage);
     }
   }
 
   changeItemsPerPage(value: string | number) {
-    this.uiService.setItemsPerPage(Number(value));
+    this.tableService.setItemsPerPage(Number(value));
   }
   
   openAddTaskModal() {
     if (!this.isTaskManagementEnabled()) {
-        this.uiService.openUpgradeModal("Task management is not available on your current plan. Please upgrade.");
+        this.modalService.openUpgradeModal("Task management is not available on your current plan. Please upgrade.");
         return;
     }
-    this.uiService.openTaskModal(null);
+    this.modalService.openTaskModal(null);
   }
 
   toggleCompleted(taskId: string) {

@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ModalService } from '../../services/modal.service';
+import { TableService } from '../../services/table.service';
 import { Company } from '../../models/crm.models';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
@@ -22,8 +23,8 @@ import { ThemeService } from '../../services/theme.service';
               (ngModelChange)="searchTerm.set($event)"
               class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto order-first sm:order-none"
               [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
-            <button (click)="uiService.openImportModal('companies')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
-            <button (click)="uiService.activeColumnCustomization.set('companies')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
+            <button (click)="modalService.openImportModal('companies')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
+            <button (click)="tableService.activeColumnCustomization.set('companies')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
             <button 
               (click)="openAddCompanyModal()"
               [title]="authService.canAddCompany() ? 'Add a new company' : 'Your plan limit has been reached. Please upgrade.'"
@@ -46,7 +47,7 @@ import { ThemeService } from '../../services/theme.service';
           </thead>
             <tbody class="divide-y" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
               @for (company of paginatedCompanies(); track company.id) {
-                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="uiService.openCompanyDetails(company)">
+                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="modalService.openCompanyDetails(company)">
                   @if (isColumnVisible('name')) {
                     <td class="px-4 py-3 text-sm font-medium" [class]="themeService.c('text-primary')">
                       <a href="#" (click)="$event.preventDefault(); $event.stopPropagation(); showContactPopover($event, company.id)" [class]="themeService.c('text-accent') + ' ' + themeService.c('hover:text-accent-hover') + ' hover:underline'">
@@ -120,7 +121,8 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class CompaniesComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
 
@@ -155,11 +157,11 @@ export class CompaniesComponent {
     effect(() => {
       // When the search term changes, reset the current page to 1.
       this.searchTerm(); // establish dependency
-      this.uiService.setCurrentPage('companies', 1);
+      this.tableService.setCurrentPage('companies', 1);
     });
   }
 
-  columns = computed(() => this.uiService.tableColumnConfigs().companies);
+  columns = computed(() => this.tableService.tableColumnConfigs().companies);
   visibleColumns = computed(() => this.columns().filter(c => c.visible));
   isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
 
@@ -174,15 +176,15 @@ export class CompaniesComponent {
   openAddCompanyModal() {
     if (!this.authService.canAddCompany()) {
         const limit = this.authService.limitFor('company')();
-        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. Please upgrade to add more.`);
+        this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} companies. Please upgrade to add more.`);
         return;
     }
-    this.uiService.openCompanyDetails(null);
+    this.modalService.openCompanyDetails(null);
   }
 
   // Pagination signals
-  itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  currentPage = computed(() => this.uiService.pagination().currentPage['companies'] || 1);
+  itemsPerPage = computed(() => this.tableService.pagination().itemsPerPage);
+  currentPage = computed(() => this.tableService.pagination().currentPage['companies'] || 1);
   totalPages = computed(() => {
     const total = this.filteredCompanies().length;
     const perPage = this.itemsPerPage();
@@ -210,17 +212,17 @@ export class CompaniesComponent {
   // Methods to handle pagination changes
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
-      this.uiService.setCurrentPage('companies', newPage);
+      this.tableService.setCurrentPage('companies', newPage);
     }
   }
 
   changeItemsPerPage(value: string | number) {
-    this.uiService.setItemsPerPage(Number(value));
+    this.tableService.setItemsPerPage(Number(value));
   }
 
   showContactPopover(event: MouseEvent, companyId: string) {
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    this.uiService.openContactPopover({
+    this.modalService.openContactPopover({
       companyId: companyId,
       position: {
         x: rect.left,

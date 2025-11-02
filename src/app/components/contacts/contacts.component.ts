@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ModalService } from '../../services/modal.service';
+import { TableService } from '../../services/table.service';
 import { AuthService } from '../../services/auth.service';
 import { Contact } from '../../models/crm.models';
 import { ThemeService } from '../../services/theme.service';
@@ -22,8 +23,8 @@ import { ThemeService } from '../../services/theme.service';
               (ngModelChange)="searchTerm.set($event)"
               class="border rounded-md shadow-sm py-2 px-3 focus:outline-none text-sm w-full sm:w-auto order-first sm:order-none"
               [class]="themeService.c('bg-primary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('focus:ring-accent') + ' ' + themeService.c('focus:border-accent')">
-            <button (click)="uiService.openImportModal('contacts')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
-            <button (click)="uiService.activeColumnCustomization.set('contacts')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
+            <button (click)="modalService.openImportModal('contacts')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Import</button>
+            <button (click)="tableService.activeColumnCustomization.set('contacts')" class="border px-4 py-2 rounded-md text-sm font-medium" [class]="themeService.c('bg-secondary') + ' ' + themeService.c('border-secondary') + ' ' + themeService.c('text-primary') + ' ' + themeService.c('bg-secondary-hover')">Columns</button>
             <button 
                 (click)="openAddContactModal()"
                 [title]="authService.canAddContact() ? 'Add a new contact' : 'Your plan limit has been reached. Please upgrade.'"
@@ -46,7 +47,7 @@ import { ThemeService } from '../../services/theme.service';
           </thead>
             <tbody class="divide-y" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
               @for (contact of paginatedContacts(); track contact.id) {
-                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="uiService.openContactModal(contact)">
+                <tr class="cursor-pointer" [class]="themeService.c('bg-primary-hover')" (click)="modalService.openContactModal(contact)">
                   @if (isColumnVisible('name')) {
                     <td class="px-4 py-3 text-sm font-medium" [class]="themeService.c('text-primary')">{{contact.name}}</td>
                   }
@@ -119,7 +120,8 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class ContactsComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
 
@@ -129,11 +131,11 @@ export class ContactsComponent {
     effect(() => {
       // When search term changes, reset page.
       this.searchTerm();
-      this.uiService.setCurrentPage('contacts', 1);
+      this.tableService.setCurrentPage('contacts', 1);
     });
   }
 
-  columns = computed(() => this.uiService.tableColumnConfigs().contacts);
+  columns = computed(() => this.tableService.tableColumnConfigs().contacts);
   visibleColumns = computed(() => this.columns().filter(c => c.visible));
   isColumnVisible = (id: string) => this.visibleColumns().some(c => c.id === id);
 
@@ -169,15 +171,15 @@ export class ContactsComponent {
   openAddContactModal() {
     if (!this.authService.canAddContact()) {
         const limit = this.authService.limitFor('contact')();
-        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. Please upgrade to add more.`);
+        this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} contacts. Please upgrade to add more.`);
         return;
     }
-    this.uiService.openContactModal(null);
+    this.modalService.openContactModal(null);
   }
 
   // Pagination signals
-  itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  currentPage = computed(() => this.uiService.pagination().currentPage['contacts'] || 1);
+  itemsPerPage = computed(() => this.tableService.pagination().itemsPerPage);
+  currentPage = computed(() => this.tableService.pagination().currentPage['contacts'] || 1);
   totalPages = computed(() => {
     const total = this.filteredContacts().length;
     const perPage = this.itemsPerPage();
@@ -205,18 +207,18 @@ export class ContactsComponent {
   // Methods to handle pagination changes
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
-      this.uiService.setCurrentPage('contacts', newPage);
+      this.tableService.setCurrentPage('contacts', newPage);
     }
   }
 
   changeItemsPerPage(value: string | number) {
-    this.uiService.setItemsPerPage(Number(value));
+    this.tableService.setItemsPerPage(Number(value));
   }
 
   openComposer(contactId: string) {
     const contact = this.dataService.contacts().find(c => c.id === contactId);
     if (contact) {
-      this.uiService.openEmailComposer({
+      this.modalService.openEmailComposer({
         to: contact.email,
         subject: '',
         body: '',

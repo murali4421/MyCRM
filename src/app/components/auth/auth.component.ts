@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { UiService } from '../../services/ui.service';
+import { ViewService } from '../../services/view.service';
 import { LogoComponent } from '../shared/logo/logo.component';
 import { ThemeService } from '../../services/theme.service';
 
@@ -19,7 +19,7 @@ import { ThemeService } from '../../services/theme.service';
             </div>
         </div>
 
-        @switch (uiService.authView()) {
+        @switch (viewService.authView()) {
           @case ('login') {
             <div class="p-8 rounded-lg shadow-md border" [class]="themeService.c('bg-primary') + ' ' + themeService.c('border-primary')">
               <h2 class="text-2xl font-bold text-center mb-6" [class]="themeService.c('text-primary')">Login</h2>
@@ -59,7 +59,7 @@ import { ThemeService } from '../../services/theme.service';
               </form>
               <p class="mt-6 text-center text-sm" [class]="themeService.c('text-secondary')">
                 Don't have an account? 
-                <a href="#" (click)="$event.preventDefault(); uiService.authView.set('signup')" class="font-medium hover:underline" [class]="themeService.c('text-accent')">
+                <a href="#" (click)="$event.preventDefault(); viewService.authView.set('signup')" class="font-medium hover:underline" [class]="themeService.c('text-accent')">
                   Sign up
                 </a>
               </p>
@@ -154,7 +154,7 @@ import { ThemeService } from '../../services/theme.service';
               </form>
               <p class="mt-6 text-center text-sm" [class]="themeService.c('text-secondary')">
                 Already have an account?
-                <a href="#" (click)="$event.preventDefault(); uiService.authView.set('login')" class="font-medium hover:underline" [class]="themeService.c('text-accent')">
+                <a href="#" (click)="$event.preventDefault(); viewService.authView.set('login')" class="font-medium hover:underline" [class]="themeService.c('text-accent')">
                   Log in
                 </a>
               </p>
@@ -168,6 +168,6 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class AuthComponent {
   authService = inject(AuthService);
-  uiService = inject(UiService);
+  viewService = inject(ViewService);
   themeService = inject(ThemeService);
 }

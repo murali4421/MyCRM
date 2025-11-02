@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ModalService } from '../../services/modal.service';
+import { TableService } from '../../services/table.service';
 import { Activity } from '../../models/crm.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
@@ -238,7 +239,8 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class ActivitiesComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   authService = inject(AuthService);
   geminiService = inject(GeminiService);
   themeService = inject(ThemeService);
@@ -262,7 +264,7 @@ export class ActivitiesComponent {
       this.searchTerm();
       this.typeFilter();
       this.ownerFilter();
-      this.uiService.setCurrentPage('activities', 1);
+      this.tableService.setCurrentPage('activities', 1);
     });
   }
 
@@ -309,8 +311,8 @@ export class ActivitiesComponent {
   sortedActivities = computed(() => this.filteredActivities().sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()));
   
   // Pagination signals
-  itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  currentPage = computed(() => this.uiService.pagination().currentPage['activities'] || 1);
+  itemsPerPage = computed(() => this.tableService.pagination().itemsPerPage);
+  currentPage = computed(() => this.tableService.pagination().currentPage['activities'] || 1);
   totalPages = computed(() => {
     const total = this.sortedActivities().length;
     const perPage = this.itemsPerPage();
@@ -338,16 +340,16 @@ export class ActivitiesComponent {
   // Methods
   changePage(newPage: number) {
     if (newPage > 0 && newPage <= this.totalPages()) {
-      this.uiService.setCurrentPage('activities', newPage);
+      this.tableService.setCurrentPage('activities', newPage);
     }
   }
 
   changeItemsPerPage(value: string | number) {
-    this.uiService.setItemsPerPage(Number(value));
+    this.tableService.setItemsPerPage(Number(value));
   }
   
   editActivity(activity: Activity) {
-    this.uiService.openActivityEditModal(activity);
+    this.modalService.openActivityEditModal(activity);
   }
 
   async deleteActivity(activityId: string) {
@@ -358,7 +360,7 @@ export class ActivitiesComponent {
   
   startAdding() {
     if (!this.isTaskManagementEnabled()) {
-        this.uiService.openUpgradeModal("Activity logging is not available on your current plan. Please upgrade.");
+        this.modalService.openUpgradeModal("Activity logging is not available on your current plan. Please upgrade.");
         return;
     }
     this.newActivity.set({

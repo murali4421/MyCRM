@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { UiService } from '../../services/ui.service';
+import { ViewService } from '../../services/view.service';
+import { ModalService } from '../../services/modal.service';
+import { TableService } from '../../services/table.service';
 import { AuthService } from '../../services/auth.service';
 import { Contact, User } from '../../models/crm.models';
 import { ThemeService } from '../../services/theme.service';
@@ -17,25 +19,25 @@ import { ThemeService } from '../../services/theme.service';
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
           @if (isUserAdmin()) {
           <button
-            (click)="uiService.usersAndRolesView.set('users')"
+            (click)="viewService.usersAndRolesView.set('users')"
             class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-            [class]="uiService.usersAndRolesView() === 'users' ? themeService.c('border-accent') + ' ' + themeService.c('text-accent') : 'border-transparent ' + themeService.c('text-secondary') + ' hover:text-slate-200 hover:border-slate-600'"
+            [class]="viewService.usersAndRolesView() === 'users' ? themeService.c('border-accent') + ' ' + themeService.c('text-accent') : 'border-transparent ' + themeService.c('text-secondary') + ' hover:text-slate-200 hover:border-slate-600'"
           >
             Users
           </button>
           <button
-            (click)="uiService.usersAndRolesView.set('roles')"
+            (click)="viewService.usersAndRolesView.set('roles')"
             class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-            [class]="uiService.usersAndRolesView() === 'roles' ? themeService.c('border-accent') + ' ' + themeService.c('text-accent') : 'border-transparent ' + themeService.c('text-secondary') + ' hover:text-slate-200 hover:border-slate-600'"
+            [class]="viewService.usersAndRolesView() === 'roles' ? themeService.c('border-accent') + ' ' + themeService.c('text-accent') : 'border-transparent ' + themeService.c('text-secondary') + ' hover:text-slate-200 hover:border-slate-600'"
           >
             Roles
           </button>
           }
           @if (isUserAdminOrManager()) {
             <button
-              (click)="uiService.usersAndRolesView.set('team')"
+              (click)="viewService.usersAndRolesView.set('team')"
               class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-              [class]="uiService.usersAndRolesView() === 'team' ? themeService.c('border-accent') + ' ' + themeService.c('text-accent') : 'border-transparent ' + themeService.c('text-secondary') + ' hover:text-slate-200 hover:border-slate-600'"
+              [class]="viewService.usersAndRolesView() === 'team' ? themeService.c('border-accent') + ' ' + themeService.c('text-accent') : 'border-transparent ' + themeService.c('text-secondary') + ' hover:text-slate-200 hover:border-slate-600'"
             >
               Team Management
             </button>
@@ -44,7 +46,7 @@ import { ThemeService } from '../../services/theme.service';
       </div>
 
       <div class="mt-6">
-        @switch(uiService.usersAndRolesView()) {
+        @switch(viewService.usersAndRolesView()) {
           @case('users') {
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold" [class]="themeService.c('text-primary')">All Users</h3>
@@ -109,7 +111,7 @@ import { ThemeService } from '../../services/theme.service';
                         </span>
                       </td>
                       <td class="px-5 py-4 border-b text-sm text-right" [class]="themeService.c('border-primary') + ' ' + themeService.c('bg-primary')">
-                        <button (click)="uiService.openUserModal(user)" class="font-medium" [class]="themeService.c('text-accent') + ' ' + themeService.c('hover:text-accent-hover')">Edit</button>
+                        <button (click)="modalService.openUserModal(user)" class="font-medium" [class]="themeService.c('text-accent') + ' ' + themeService.c('hover:text-accent-hover')">Edit</button>
                       </td>
                     </tr>
                   }
@@ -186,7 +188,9 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class UsersRolesComponent {
   dataService = inject(DataService);
-  uiService = inject(UiService);
+  viewService = inject(ViewService);
+  modalService = inject(ModalService);
+  tableService = inject(TableService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
 
@@ -222,7 +226,7 @@ export class UsersRolesComponent {
   startAdding() {
     if (!this.authService.canAddUser()) {
         const limit = this.authService.limitFor('user')();
-        this.uiService.openUpgradeModal(`You have reached your plan's limit of ${limit} users. Please upgrade to add more.`);
+        this.modalService.openUpgradeModal(`You have reached your plan's limit of ${limit} users. Please upgrade to add more.`);
         return;
     }
     this.isAdding.set(true);
@@ -256,37 +260,3 @@ export class UsersRolesComponent {
     await this.dataService.addUser(userToAdd);
     this.isAdding.set(false);
   }
-
-  // Pagination for Users table
-  itemsPerPage = computed(() => this.uiService.pagination().itemsPerPage);
-  usersCurrentPage = computed(() => this.uiService.pagination().currentPage['users'] || 1);
-  
-  usersTotalPages = computed(() => {
-    const total = this.allUsers().length;
-    return total > 0 ? Math.ceil(total / this.itemsPerPage()) : 0;
-  });
-
-  paginatedUsers = computed(() => {
-    const start = (this.usersCurrentPage() - 1) * this.itemsPerPage();
-    const end = start + this.itemsPerPage();
-    return this.allUsers().slice(start, end);
-  });
-  
-  usersStartItemNumber = computed(() => {
-    return this.allUsers().length > 0 ? (this.usersCurrentPage() - 1) * this.itemsPerPage() + 1 : 0;
-  });
-
-  usersEndItemNumber = computed(() => {
-    return Math.min(this.usersCurrentPage() * this.itemsPerPage(), this.allUsers().length);
-  });
-
-  changeUsersPage(newPage: number) {
-    if (newPage > 0 && newPage <= this.usersTotalPages()) {
-      this.uiService.setCurrentPage('users', newPage);
-    }
-  }
-
-  changeItemsPerPage(value: string | number) {
-    this.uiService.setItemsPerPage(Number(value));
-  }
-}
